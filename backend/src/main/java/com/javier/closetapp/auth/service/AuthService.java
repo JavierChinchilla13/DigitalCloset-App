@@ -3,6 +3,7 @@ package com.javier.closetapp.auth.service;
 import com.javier.closetapp.auth.dto.AuthResponse;
 import com.javier.closetapp.auth.dto.LoginRequest;
 import com.javier.closetapp.auth.dto.RegisterRequest;
+import com.javier.closetapp.common.enums.Role;
 import com.javier.closetapp.security.JwtService;
 import com.javier.closetapp.user.entity.User;
 import com.javier.closetapp.user.repository.UserRepository;
@@ -10,8 +11,6 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
-import java.util.ArrayList;
 
 @Service
 public class AuthService {
@@ -30,21 +29,17 @@ public class AuthService {
     }
 
     public AuthResponse register(RegisterRequest request) {
+        Role userRole = request.getRole() != null ? request.getRole() : Role.ROLE_USER;
+        
         User user = new User(
                 request.getEmail(),
-                passwordEncoder.encode(request.getPassword())
+                passwordEncoder.encode(request.getPassword()),
+                userRole
         );
         
         User savedUser = userRepository.save(user);
         
-        org.springframework.security.core.userdetails.User userDetails = 
-                new org.springframework.security.core.userdetails.User(
-                        savedUser.getEmail(),
-                        savedUser.getPassword(),
-                        new ArrayList<>()
-                );
-        
-        String jwtToken = jwtService.generateToken(userDetails);
+        String jwtToken = jwtService.generateToken(savedUser);
         
         return new AuthResponse(jwtToken, savedUser.getUserId(), savedUser.getEmail());
     }
@@ -60,14 +55,7 @@ public class AuthService {
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow();
         
-        org.springframework.security.core.userdetails.User userDetails = 
-                new org.springframework.security.core.userdetails.User(
-                        user.getEmail(),
-                        user.getPassword(),
-                        new ArrayList<>()
-                );
-        
-        String jwtToken = jwtService.generateToken(userDetails);
+        String jwtToken = jwtService.generateToken(user);
         
         return new AuthResponse(jwtToken, user.getUserId(), user.getEmail());
     }

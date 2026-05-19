@@ -10,12 +10,24 @@
 
 ### 2. Authentication & Security
 - **JWT Stateless Auth**: Implemented secure token-based authentication.
+- **RBAC (Role-Based Access Control)**: Support for `ROLE_USER` and `ROLE_ADMIN`.
 - **Endpoints**:
-    - `POST /api/auth/register`: User registration with email/password.
+    - `POST /api/auth/register`: User registration (default role: `ROLE_USER`).
     - `POST /api/auth/login`: User login returning a JWT.
-- **Persistence**: User data stored in `users` table with BCrypt password hashing.
+- **Persistence**: User data stored in `users` table with BCrypt password hashing and `active` status for soft deletes.
 
-### 3. Clothing Management (Virtual Closet)
+### 3. User Management
+- **Profile Management**: Authenticated users can manage their own profile.
+- **Admin Capabilities**: Admins can view all users and manage their activation status.
+- **Endpoints**:
+    - `GET /api/users/me`: View current user profile.
+    - `PUT /api/users/me`: Update current user profile.
+    - `PATCH /api/users/me/deactivate`: Soft-delete current user account.
+    - `GET /api/users`: List all users (Admin only).
+    - `PATCH /api/users/{id}/deactivate`: Deactivate a user (Admin only).
+    - `PATCH /api/users/{id}/reactivate`: Reactivate a user (Admin only).
+
+### 4. Clothing Management (Virtual Closet)
 - **Entity**: `ClothingItem` with fields for `name`, `description`, `category` (Enum), and `imageUrl`.
 - **Endpoints**:
     - `POST /api/clothing`: Create a new item (automatically linked to authenticated user).
@@ -24,7 +36,7 @@
     - `DELETE /api/clothing/{id}`: Delete an item (with ownership verification).
 - **Categories**: `TOP`, `BOTTOM`, `SHOES`, `ACCESSORY`, `JACKET`.
 
-### 4. Outfit System
+### 5. Outfit System
 - **Entities**: `Outfit` and `OutfitItem` (Junction table with canvas state).
 - **Canvas State Persistence**: Saves `position_x`, `position_y`, `scale_x`, `scale_y`, `rotation`, and `item_order` (zIndex).
 - **Endpoints**:
