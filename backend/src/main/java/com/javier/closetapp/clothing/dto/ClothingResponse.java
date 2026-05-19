@@ -1,0 +1,42 @@
+package com.javier.closetapp.clothing.dto;
+
+import com.javier.closetapp.common.enums.ClothingCategory;
+
+public class ClothingResponse {
+    private Long itemId;
+    private String name;
+    private String description;
+    private ClothingCategory category;
+    private String imageUrl;
+    private Boolean isActive;
+
+    public ClothingResponse() {}
+
+    public ClothingResponse(Long itemId, String name, String description, 
+                            ClothingCategory category, String imageUrl, Boolean isActive) {
+        this.itemId = itemId;
+        this.name = name;
+        this.description = description;
+        this.category = category;
+        this.imageUrl = imageUrl;
+        this.isActive = isActive;
+    }
+
+    public Long getItemId() { return itemId; }
+    public void setItemId(Long itemId) { this.itemId = itemId; }
+
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
+
+    public ClothingCategory getCategory() { return category; }
+    public void setCategory(ClothingCategory category) { this.category = category; }
+
+    public String getImageUrl() { return imageUrl; }
+    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
+
+    public Boolean getActive() { return isActive; }
+    public void setActive(Boolean active) { isActive = active; }
+}
