@@ -9,7 +9,7 @@ interface OutfitState {
   error: string | null;
   fetchOutfits: () => Promise<void>;
   saveOutfit: (data: OutfitRequest) => Promise<void>;
-  removeOutfit: (id: number) => Promise<void>;
+  removeOutfit: (outfitId: number) => Promise<void>;
 }
 
 export const useOutfitStore = create<OutfitState>((set) => ({
@@ -37,12 +37,12 @@ export const useOutfitStore = create<OutfitState>((set) => ({
     }
   },
 
-  removeOutfit: async (id) => {
+  removeOutfit: async (outfitId) => {
     set({ isLoading: true, error: null });
     try {
-      await outfitService.deleteOutfit(id);
+      await outfitService.deleteOutfit(outfitId);
       set((state) => ({
-        outfits: state.outfits.filter((o) => o.id !== id),
+        outfits: state.outfits.filter((o) => o.outfitId !== outfitId),
         isLoading: false,
       }));
     } catch (err: any) {

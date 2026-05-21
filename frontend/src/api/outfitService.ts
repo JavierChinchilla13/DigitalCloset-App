@@ -5,7 +5,7 @@ export interface OutfitRequest {
   name: string;
   description?: string;
   items: {
-    clothingItemId: number;
+    itemId: number;
     positionX: number;
     positionY: number;
     scaleX: number;
@@ -21,8 +21,8 @@ export const outfitService = {
     return response.data;
   },
 
-  getOutfit: async (id: number): Promise<Outfit> => {
-    const response = await api.get<Outfit>(`/outfits/${id}`);
+  getOutfit: async (outfitId: number): Promise<Outfit> => {
+    const response = await api.get<Outfit>(`/outfits/${outfitId}`);
     return response.data;
   },
 
@@ -31,12 +31,12 @@ export const outfitService = {
     return response.data;
   },
 
-  updateOutfit: async (id: number, data: OutfitRequest): Promise<Outfit> => {
-    const response = await api.put<Outfit>(`/outfits/${id}`, data);
+  updateOutfit: async (outfitId: number, data: OutfitRequest): Promise<Outfit> => {
+    const response = await api.put<Outfit>(`/outfits/${outfitId}`, data);
     return response.data;
   },
 
-  deleteOutfit: async (id: number): Promise<void> => {
-    await api.delete(`/outfits/${id}`);
+  deleteOutfit: async (outfitId: number): Promise<void> => {
+    await api.delete(`/outfits/${outfitId}`);
   }
 };

@@ -95,7 +95,7 @@ const OutfitBuilderPage = () => {
   const addToCanvas = (clothingItem: ClothingItem) => {
     const newItem = {
       id: `canvas-${Date.now()}`,
-      clothingItemId: clothingItem.id,
+      itemId: clothingItem.itemId,
       imageUrl: clothingItem.imageUrl,
       x: 100,
       y: 100,
@@ -113,7 +113,7 @@ const OutfitBuilderPage = () => {
     const requestData = {
       name: outfitName,
       items: canvasItems.map((item, index) => ({
-        clothingItemId: item.clothingItemId,
+        itemId: item.itemId,
         positionX: item.x,
         positionY: item.y,
         scaleX: item.width / 200, // Normalized
@@ -172,7 +172,7 @@ const OutfitBuilderPage = () => {
           ) : (
             closetItems.filter(i => i.category === activeCategory).map(item => (
               <motion.div
-                key={item.id}
+                key={item.itemId}
                 whileHover={{ scale: 1.02, y: -4 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => addToCanvas(item)}

@@ -1,19 +1,46 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { ChevronRight, ExternalLink, Loader2, Plus } from 'lucide-react';
+import { ChevronRight, Loader2, Plus } from 'lucide-react';
 import { ClothingCategory } from '../types';
 import type { ClothingItem } from '../types';
 import SectionWrapper from '../components/SectionWrapper';
 import { useClothingStore } from '../store/useClothingStore';
 import UploadGarmentModal from '../components/UploadGarmentModal';
+import ClothingCard from '../components/ClothingCard';
+import ClothingDetailsModal from '../components/ClothingDetailsModal';
+import EditClothingModal from '../components/EditClothingModal';
+import DeleteConfirmationModal from '../components/DeleteConfirmationModal';
 
 const ClosetSection = () => {
   const { items, isLoading, fetchItems } = useClothingStore();
+  
+  // Modal States
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  
+  // Selected Item State
+  const [selectedItem, setSelectedItem] = useState<ClothingItem | null>(null);
 
   useEffect(() => {
     fetchItems();
   }, [fetchItems]);
+
+  const handleViewDetails = (item: ClothingItem) => {
+    setSelectedItem(item);
+    setIsDetailsModalOpen(true);
+  };
+
+  const handleEdit = (item: ClothingItem) => {
+    setSelectedItem(item);
+    setIsEditModalOpen(true);
+  };
+
+  const handleDelete = (item: ClothingItem) => {
+    setSelectedItem(item);
+    setIsDeleteModalOpen(true);
+  };
 
   // Group items by category
   const groupedItems = items.reduce((acc, item) => {
@@ -24,7 +51,6 @@ const ClosetSection = () => {
     return acc;
   }, {} as Record<string, ClothingItem[]>);
 
-  // If no items are found, we could show a placeholder or some message
   const categories = Object.keys(groupedItems).length > 0 
     ? Object.entries(groupedItems) 
     : [];
@@ -51,7 +77,7 @@ const ClosetSection = () => {
         </div>
       </div>
 
-      {isLoading ? (
+      {isLoading && items.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 gap-4">
           <Loader2 className="animate-spin text-accent" size={40} />
           <p className="text-xs font-black tracking-[0.2em] text-text-secondary uppercase opacity-50">Syncing with mainframe...</p>
@@ -86,27 +112,13 @@ const ClosetSection = () => {
 
               <div className="flex gap-6 overflow-x-auto pb-8 no-scrollbar scroll-smooth">
                 {categoryItems.map((item) => (
-                  <motion.div
-                    key={item.id}
-                    whileHover={{ y: -12, scale: 1.02 }}
-                    className="flex-shrink-0 w-64 md:w-72 group"
-                  >
-                    <div className="relative aspect-[3/4] rounded-2xl overflow-hidden mb-4 premium-card glow-effect">
-                      <img 
-                        src={item.imageUrl} 
-                        alt={item.name}
-                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-background-main/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-6">
-                        <button className="w-full py-3 bg-white text-background-main text-xs font-black rounded-full flex items-center justify-center gap-2">
-                          <ExternalLink size={14} />
-                          DETAILS
-                        </button>
-                      </div>
-                    </div>
-                    <h3 className="text-sm font-bold tracking-tight text-white mb-1">{item.name}</h3>
-                    <p className="text-[10px] text-text-secondary font-black tracking-widest uppercase opacity-40">COLLECTION 2026</p>
-                  </motion.div>
+                  <ClothingCard 
+                    key={item.itemId}
+                    item={item}
+                    onViewDetails={handleViewDetails}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                  />
                 ))}
               </div>
             </motion.div>
@@ -114,9 +126,29 @@ const ClosetSection = () => {
         </div>
       )}
 
+      {/* Modals */}
       <UploadGarmentModal 
         isOpen={isUploadModalOpen} 
         onClose={() => setIsUploadModalOpen(false)} 
+      />
+
+      <ClothingDetailsModal 
+        item={selectedItem}
+        isOpen={isDetailsModalOpen}
+        onClose={() => setIsDetailsModalOpen(false)}
+      />
+
+      <EditClothingModal 
+        item={selectedItem}
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+      />
+
+      <DeleteConfirmationModal 
+        itemId={selectedItem?.itemId || null}
+        itemName={selectedItem?.name || ''}
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
       />
     </SectionWrapper>
   );

@@ -29,16 +29,20 @@ export enum ClothingCategory {
 }
 
 export interface ClothingItem {
-  id: number;
+  itemId: number;
   name: string;
   description?: string;
   category: ClothingCategory;
   imageUrl: string;
+  active?: boolean;
+  uploadDate?: string;
 }
 
 export interface OutfitItem {
-  id: number;
-  clothingItem: ClothingItem;
+  outfitItemId: number;
+  itemId: number;
+  itemName?: string;
+  imageUrl?: string;
   positionX: number;
   positionY: number;
   scaleX: number;
@@ -48,7 +52,7 @@ export interface OutfitItem {
 }
 
 export interface Outfit {
-  id: number;
+  outfitId: number;
   name: string;
   description?: string;
   items: OutfitItem[];
@@ -59,7 +63,7 @@ export interface OutfitRequest {
   name: string;
   description?: string;
   items: {
-    clothingItemId: number;
+    itemId: number; // Corrected to match backend OutfitItemRequest
     positionX: number;
     positionY: number;
     scaleX: number;

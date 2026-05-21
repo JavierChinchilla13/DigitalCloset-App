@@ -1,5 +1,6 @@
 package com.javier.closetapp.clothing.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.javier.closetapp.common.enums.ClothingCategory;
 
 public class ClothingResponse {
@@ -8,18 +9,21 @@ public class ClothingResponse {
     private String description;
     private ClothingCategory category;
     private String imageUrl;
-    private Boolean isActive;
+    private Boolean active;
+    private String uploadDate;
 
     public ClothingResponse() {}
 
     public ClothingResponse(Long itemId, String name, String description, 
-                            ClothingCategory category, String imageUrl, Boolean isActive) {
+                            ClothingCategory category, String imageUrl, Boolean active,
+                            String uploadDate) {
         this.itemId = itemId;
         this.name = name;
         this.description = description;
         this.category = category;
         this.imageUrl = imageUrl;
-        this.isActive = isActive;
+        this.active = active;
+        this.uploadDate = uploadDate;
     }
 
     public Long getItemId() { return itemId; }
@@ -37,6 +41,9 @@ public class ClothingResponse {
     public String getImageUrl() { return imageUrl; }
     public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
 
-    public Boolean getActive() { return isActive; }
-    public void setActive(Boolean active) { isActive = active; }
+    public Boolean getActive() { return active; }
+    public void setActive(Boolean active) { this.active = active; }
+
+    public String getUploadDate() { return uploadDate; }
+    public void setUploadDate(String uploadDate) { this.uploadDate = uploadDate; }
 }

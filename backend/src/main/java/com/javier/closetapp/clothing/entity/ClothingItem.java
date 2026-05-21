@@ -4,11 +4,13 @@ import com.javier.closetapp.common.enums.ClothingCategory;
 import com.javier.closetapp.user.entity.User;
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.DynamicUpdate;
 
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "clothing_items")
+@DynamicUpdate
 public class ClothingItem {
 
     @Id

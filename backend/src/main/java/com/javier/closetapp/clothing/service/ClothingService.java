@@ -8,7 +8,9 @@ import com.javier.closetapp.user.entity.User;
 import com.javier.closetapp.user.repository.UserRepository;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -28,6 +30,7 @@ public class ClothingService {
         return userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
     }
 
+    @Transactional
     public ClothingResponse createItem(ClothingRequest request) {
         User user = getAuthenticatedUser();
         ClothingItem item = new ClothingItem();
@@ -48,6 +51,7 @@ public class ClothingService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional
     public ClothingResponse updateItem(Long id, ClothingRequest request) {
         User user = getAuthenticatedUser();
         ClothingItem item = clothingRepository.findById(id)
@@ -57,10 +61,18 @@ public class ClothingService {
             throw new RuntimeException("Unauthorized to update this item");
         }
 
-        item.setName(request.getName());
-        item.setDescription(request.getDescription());
-        item.setCategory(request.getCategory());
-        item.setImageUrl(request.getImageUrl());
+        if (request.getName() != null) {
+            item.setName(request.getName());
+        }
+        if (request.getDescription() != null) {
+            item.setDescription(request.getDescription());
+        }
+        if (request.getCategory() != null) {
+            item.setCategory(request.getCategory());
+        }
+        if (request.getImageUrl() != null) {
+            item.setImageUrl(request.getImageUrl());
+        }
 
         ClothingItem updated = clothingRepository.save(item);
         return mapToResponse(updated);
@@ -79,13 +91,21 @@ public class ClothingService {
     }
 
     private ClothingResponse mapToResponse(ClothingItem item) {
+        LocalDateTime createdAt = item.getCreatedAt();
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
+        }
+        
+        String formattedDate = createdAt.format(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+
         return new ClothingResponse(
                 item.getItemId(),
                 item.getName(),
                 item.getDescription(),
                 item.getCategory(),
                 item.getImageUrl(),
-                item.getActive()
+                item.getActive(),
+                formattedDate
         );
     }
 }

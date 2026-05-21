@@ -9,22 +9,22 @@ export const clothingService = {
     return response.data;
   },
 
-  getClothingItem: async (id: number): Promise<ClothingItem> => {
-    const response = await api.get<ClothingItem>(`/clothing/${id}`);
+  getClothingItem: async (itemId: number): Promise<ClothingItem> => {
+    const response = await api.get<ClothingItem>(`/clothing/${itemId}`);
     return response.data;
   },
 
-  createClothingItem: async (data: Omit<ClothingItem, 'id'>): Promise<ClothingItem> => {
+  createClothingItem: async (data: Omit<ClothingItem, 'itemId'>): Promise<ClothingItem> => {
     const response = await api.post<ClothingItem>('/clothing', data);
     return response.data;
   },
 
-  updateClothingItem: async (id: number, data: Partial<ClothingItem>): Promise<ClothingItem> => {
-    const response = await api.put<ClothingItem>(`/clothing/${id}`, data);
+  updateClothingItem: async (itemId: number, data: Partial<ClothingItem>): Promise<ClothingItem> => {
+    const response = await api.put<ClothingItem>(`/clothing/${itemId}`, data);
     return response.data;
   },
 
-  deleteClothingItem: async (id: number): Promise<void> => {
-    await api.delete(`/clothing/${id}`);
+  deleteClothingItem: async (itemId: number): Promise<void> => {
+    await api.delete(`/clothing/${itemId}`);
   }
 };

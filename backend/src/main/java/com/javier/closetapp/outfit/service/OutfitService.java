@@ -136,6 +136,8 @@ public class OutfitService {
             OutfitItemResponse itemRes = new OutfitItemResponse();
             itemRes.setOutfitItemId(item.getOutfitItemId());
             itemRes.setItemId(item.getClothingItem().getItemId());
+            itemRes.setItemName(item.getClothingItem().getName());
+            itemRes.setImageUrl(item.getClothingItem().getImageUrl());
             itemRes.setSlot(item.getSlot());
             itemRes.setItemOrder(item.getItemOrder());
             itemRes.setPositionX(item.getPositionX());

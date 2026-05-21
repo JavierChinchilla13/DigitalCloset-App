@@ -31,7 +31,7 @@ const OutfitsSection = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
           {outfits.map((outfit, idx) => (
             <motion.div
-              key={outfit.id}
+              key={outfit.outfitId}
               initial={{ opacity: 0, scale: 0.9 }}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
@@ -40,9 +40,9 @@ const OutfitsSection = () => {
               className="group relative"
             >
               <div className="relative aspect-[3/4] rounded-3xl overflow-hidden mb-6 premium-card">
-                {/* Fallback image if first item image is missing */}
+                {/* Use the first item's image as preview */}
                 <img 
-                  src={outfit.items?.[0]?.clothingItem?.imageUrl || "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=600&h=800&fit=crop"} 
+                  src={outfit.items?.[0]?.imageUrl || "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=600&h=800&fit=crop"} 
                   alt={outfit.name} 
                   className="w-full h-full object-cover grayscale-[0.5] group-hover:grayscale-0 transition-all duration-700"
                 />
@@ -57,7 +57,7 @@ const OutfitsSection = () => {
                       <Share2 size={18} />
                     </button>
                     <button 
-                      onClick={() => removeOutfit(outfit.id)}
+                      onClick={() => removeOutfit(outfit.outfitId)}
                       className="p-3 bg-red-500/20 hover:bg-red-500/40 rounded-full text-red-400 transition-colors"
                     >
                       <Trash2 size={18} />

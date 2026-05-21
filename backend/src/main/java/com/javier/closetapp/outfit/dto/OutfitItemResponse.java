@@ -3,6 +3,8 @@ package com.javier.closetapp.outfit.dto;
 public class OutfitItemResponse {
     private Long outfitItemId;
     private Long itemId;
+    private String itemName;
+    private String imageUrl;
     private String slot;
     private Integer itemOrder;
     private Double positionX;
@@ -18,6 +20,12 @@ public class OutfitItemResponse {
 
     public Long getItemId() { return itemId; }
     public void setItemId(Long itemId) { this.itemId = itemId; }
+
+    public String getItemName() { return itemName; }
+    public void setItemName(String itemName) { this.itemName = itemName; }
+
+    public String getImageUrl() { return imageUrl; }
+    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
 
     public String getSlot() { return slot; }
     public void setSlot(String slot) { this.slot = slot; }
