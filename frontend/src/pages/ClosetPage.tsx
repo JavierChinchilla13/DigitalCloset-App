@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useClothingStore } from '../store/useClothingStore';
+import { usePersonaStore } from '../store/usePersonaStore';
 import { ClothingCategory } from '../types';
 import type { ClothingItem } from '../types';
 import ClothingCard from '../components/ClothingCard';
@@ -20,6 +21,7 @@ import DeleteConfirmationModal from '../components/DeleteConfirmationModal';
 
 const ClosetPage = () => {
   const { items, isLoading, fetchItems } = useClothingStore();
+  const { persona } = usePersonaStore();
   const navigate = useNavigate();
   
   const [searchQuery, setSearchQuery] = useState('');
@@ -57,9 +59,10 @@ const ClosetPage = () => {
       const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesCategory = activeCategory === 'ALL' || item.category === activeCategory;
       const matchesFavorite = !showOnlyFavorites || item.isFavorite;
-      return matchesSearch && matchesCategory && matchesFavorite;
+      const matchesGender = !item.personaType || item.personaType === persona.type;
+      return matchesSearch && matchesCategory && matchesFavorite && matchesGender;
     });
-  }, [items, searchQuery, activeCategory, showOnlyFavorites]);
+  }, [items, searchQuery, activeCategory, showOnlyFavorites, persona.type]);
 
   const categories = ['ALL', ...Object.values(ClothingCategory)];
 

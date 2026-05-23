@@ -3,13 +3,21 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Sparkles, Shirt, LayoutGrid, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useLocalOutfitStore } from '../store/useLocalOutfitStore';
+import { usePersonaStore } from '../store/usePersonaStore';
+import { PersonaType } from '../types';
 import OutfitCard from '../components/OutfitCard';
 import SectionWrapper from '../components/SectionWrapper';
 
 const SavedOutfitsPage = () => {
   const { outfits, _hasHydrated } = useLocalOutfitStore();
+  const { persona } = usePersonaStore();
   const navigate = useNavigate();
   const [showContent, setShowContent] = useState(false);
+
+  const filteredOutfits = outfits.filter(o => {
+    const outfitType = o.personaType || PersonaType.MALE;
+    return outfitType === persona.type;
+  });
 
   // Robust content visibility trigger
   useEffect(() => {
@@ -32,7 +40,7 @@ const SavedOutfitsPage = () => {
               SAVED <br /> <span className="text-accent">OUTFITS</span>
             </h1>
             <p className="text-text-secondary text-xs font-medium max-w-md uppercase tracking-widest opacity-40">
-              Your curated digital wardrobe orchestration // {outfits.length} styles ready
+              Your curated digital wardrobe orchestration // {filteredOutfits.length} styles ready
             </p>
           </div>
 
@@ -58,7 +66,7 @@ const SavedOutfitsPage = () => {
               <Loader2 className="animate-spin text-accent mb-4" size={40} />
               <p className="text-[8px] font-black tracking-[0.4em] text-white uppercase opacity-20">Synchronizing...</p>
             </motion.div>
-          ) : outfits.length === 0 ? (
+          ) : filteredOutfits.length === 0 ? (
             <motion.div 
               key="empty"
               initial={{ opacity: 0, y: 20 }}
@@ -70,7 +78,7 @@ const SavedOutfitsPage = () => {
               </div>
               <h3 className="text-xl font-light text-white tracking-[0.3em] uppercase mb-4">Your collection is empty</h3>
               <p className="text-text-secondary text-[10px] font-black tracking-widest uppercase mb-12 opacity-30">
-                Start orchestrating your first digital style set
+                Start orchestrating your first digital style set for this persona
               </p>
               <button 
                 onClick={() => navigate('/outfits/new')}
@@ -103,7 +111,7 @@ const SavedOutfitsPage = () => {
                 </div>
               </motion.button>
 
-              {outfits.map((outfit) => (
+              {filteredOutfits.map((outfit) => (
                 <OutfitCard key={outfit.id} outfit={outfit} />
               ))}
             </motion.div>

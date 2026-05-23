@@ -1,26 +1,27 @@
 import React from 'react';
-import { motion } from 'framer-motion';
 
 const PersonaSpotlight = () => {
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      {/* Soft Top Ambient Light */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[600px] bg-gradient-to-b from-white/[0.03] to-transparent opacity-50" />
+      {/* Clean Studio Background */}
+      <div className="absolute inset-0 bg-[#0A0A0A]" />
+      
+      {/* Subtle Depth Gradient */}
+      <div className="absolute inset-0 bg-gradient-to-tr from-accent/5 via-transparent to-transparent opacity-40" />
+      
+      {/* Top Ambient Light */}
+      <div className="absolute top-0 left-0 right-0 h-[50vh] bg-gradient-to-b from-white/[0.03] to-transparent" />
 
-      {/* Main Studio Spotlight Glow */}
-      <motion.div 
-        animate={{ 
-          opacity: [0.4, 0.5, 0.4],
-        }}
-        transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[1000px] bg-white/[0.02] rounded-full blur-[160px]" 
+      {/* Modern Vignette */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.4)_100%)]" />
+
+      {/* Digital Grid - Very subtle */}
+      <div className="absolute inset-0 opacity-[0.02]" 
+        style={{ 
+          backgroundImage: 'linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)',
+          backgroundSize: '100px 100px'
+        }} 
       />
-
-      {/* Floor Highlight (Studio Floor Effect) */}
-      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[600px] h-48 bg-white/[0.03] rounded-[100%] blur-[80px]" />
-
-      {/* Minimal Texture / Depth */}
-      <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-[0.02] mix-blend-overlay" />
     </div>
   );
 };

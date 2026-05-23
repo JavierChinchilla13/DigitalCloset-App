@@ -1,11 +1,13 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { PersonaType } from '../types';
 
 export interface LocalOutfit {
   id: string;
   name: string;
   createdAt: string;
   preview: string; // Base64 or URL
+  personaType: PersonaType;
   items: {
     topId: number | null;
     bottomId: number | null;

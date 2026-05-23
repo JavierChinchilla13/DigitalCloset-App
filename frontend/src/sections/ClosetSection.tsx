@@ -4,7 +4,9 @@ import { Loader2, Plus, LayoutPanelTop } from 'lucide-react';
 import type { ClothingItem } from '../types';
 import SectionWrapper from '../components/SectionWrapper';
 import { useClothingStore } from '../store/useClothingStore';
+import { usePersonaStore } from '../store/usePersonaStore';
 import { useNavigate } from 'react-router-dom';
+import { PersonaType } from '../types';
 import UploadFlow from '../components/FittingTool/UploadFlow';
 import ClothingCard from '../components/ClothingCard';
 import ClothingDetailsModal from '../components/ClothingDetailsModal';
@@ -13,6 +15,7 @@ import DeleteConfirmationModal from '../components/DeleteConfirmationModal';
 
 const ClosetSection = () => {
   const { items, isLoading, fetchItems } = useClothingStore();
+  const { persona } = usePersonaStore();
   const navigate = useNavigate();
   
   // Modal States
@@ -43,8 +46,15 @@ const ClosetSection = () => {
     setIsDeleteModalOpen(true);
   };
 
+  // Filter items by persona gender
+  const filteredItems = items.filter(item => {
+    // If the item has a personaType, it must match. 
+    // If it doesn't (legacy), we show it.
+    return !item.personaType || item.personaType === persona.type;
+  });
+
   // Group items by category
-  const groupedItems = items.reduce((acc, item) => {
+  const groupedItems = filteredItems.reduce((acc, item) => {
     if (!acc[item.category]) {
       acc[item.category] = [];
     }

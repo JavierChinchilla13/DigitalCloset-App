@@ -52,6 +52,7 @@ const OutfitBuilderPage = () => {
     const outfitData = {
       name: outfitName,
       preview: previewImage,
+      personaType: persona.type,
       items: {
         topId: persona.topId,
         bottomId: persona.bottomId,

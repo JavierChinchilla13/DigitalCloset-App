@@ -5,11 +5,18 @@ import SectionWrapper from '../components/SectionWrapper';
 import { useLocalOutfitStore } from '../store/useLocalOutfitStore';
 import { usePersonaStore } from '../store/usePersonaStore';
 import { useNavigate } from 'react-router-dom';
+import { PersonaType } from '../types';
 
 const OutfitsSection = () => {
   const { outfits, _hasHydrated, deleteOutfit } = useLocalOutfitStore();
-  const { updatePersona } = usePersonaStore();
+  const { persona, updatePersona } = usePersonaStore();
   const navigate = useNavigate();
+
+  const filteredOutfits = outfits.filter(o => {
+    // For legacy data, we default to MALE or allow it if personaType is missing
+    const outfitType = o.personaType || PersonaType.MALE;
+    return outfitType === persona.type;
+  });
 
   const handleApply = (outfit: any) => {
     updatePersona(outfit.items);
@@ -38,7 +45,7 @@ const OutfitsSection = () => {
       <div className="flex justify-between items-end mb-12 px-2">
         <div>
           <h2 className="text-4xl font-light tracking-tighter mb-2 uppercase">Saved Outfits</h2>
-          <p className="text-text-secondary text-[10px] uppercase tracking-widest opacity-40">Your curated collection // {outfits.length} styles</p>
+          <p className="text-text-secondary text-[10px] uppercase tracking-widest opacity-40">Your curated collection // {filteredOutfits.length} styles</p>
         </div>
         <button 
           onClick={() => navigate('/outfits/new')}
@@ -49,13 +56,13 @@ const OutfitsSection = () => {
         </button>
       </div>
 
-      {outfits.length === 0 ? (
+      {filteredOutfits.length === 0 ? (
         <div className="text-center py-24 border-2 border-dashed border-white/5 rounded-3xl opacity-20">
-          <p className="text-[10px] text-text-secondary uppercase tracking-[0.3em] font-black">No styles saved yet</p>
+          <p className="text-[10px] text-text-secondary uppercase tracking-[0.3em] font-black">No styles saved yet for this persona</p>
         </div>
       ) : (
         <div className="flex gap-6 overflow-x-auto pb-6 no-scrollbar scroll-smooth">
-          {outfits.map((outfit, idx) => (
+          {filteredOutfits.map((outfit, idx) => (
             <motion.div
               key={outfit.id}
               initial={{ opacity: 0, scale: 0.9 }}
