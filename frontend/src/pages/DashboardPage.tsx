@@ -9,7 +9,7 @@ const DashboardPage = () => {
   const location = useLocation();
 
   useEffect(() => {
-    // Handle hash scrolling on initial load or hash change
+    // Handle INITIAL hash scrolling (e.g. landing on /#closet from another page)
     if (location.hash) {
       const id = location.hash.replace('#', '');
       const element = document.getElementById(id);
@@ -17,13 +17,13 @@ const DashboardPage = () => {
         element.scrollIntoView({ behavior: 'smooth' });
       }
     }
-  }, [location.hash]); // Only run when hash changes explicitly
+  }, []); // Only run once on mount
 
   useEffect(() => {
     const sections = ['persona', 'closet', 'outfits'];
     const observerOptions = {
       root: null,
-      rootMargin: '-40% 0px -40% 0px', // Center-ish trigger
+      rootMargin: '-20% 0px -60% 0px', // Trigger near top
       threshold: 0
     };
 
@@ -31,10 +31,9 @@ const DashboardPage = () => {
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
           const id = entry.target.id;
-          // Update hash without triggering a full route change or jump
+          // Update URL without triggering scroll event listeners or dispatching events
+          // This keeps the URL in sync for the Navbar to read, without "dragging" the user
           window.history.replaceState(null, '', `/#${id}`);
-          // Manually dispatch a popstate event so components using useLocation/location.hash update
-          window.dispatchEvent(new Event('popstate'));
         }
       });
     };

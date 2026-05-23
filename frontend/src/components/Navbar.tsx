@@ -9,40 +9,52 @@ const Navbar = () => {
   const { isAuthenticated, user, logout } = useAuthStore();
   const location = useLocation();
   const navigate = useNavigate();
-  const [activeHash, setActiveHash] = React.useState(window.location.hash);
+  const [activeSection, setActiveSection] = React.useState('persona');
 
-  // Sync local hash state with window location
+  // Unified scroll listener to track active section for the underline
   React.useEffect(() => {
-    const handleHashChange = () => {
-      setActiveHash(window.location.hash);
+    const handleScroll = () => {
+      if (location.pathname !== '/') return;
+
+      const sections = ['persona', 'closet', 'outfits'];
+      const scrollPosition = window.scrollY + 100; // Offset for navbar
+
+      for (const sectionId of sections) {
+        const element = document.getElementById(sectionId);
+        if (element) {
+          const offsetTop = element.offsetTop;
+          const offsetHeight = element.offsetHeight;
+
+          if (scrollPosition >= offsetTop && scrollPosition < offsetTop + offsetHeight) {
+            setActiveSection(sectionId);
+            break;
+          }
+        }
+      }
     };
 
-    window.addEventListener('popstate', handleHashChange);
-    return () => window.removeEventListener('popstate', handleHashChange);
-  }, []);
-
-  // Update hash when react-router location changes
-  React.useEffect(() => {
-    setActiveHash(location.hash);
-  }, [location.hash]);
+    window.addEventListener('scroll', handleScroll);
+    // Trigger once on mount
+    handleScroll();
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [location.pathname]);
 
   const navLinks = [
-    { name: 'Persona', path: '/#persona', icon: UserCircle, protected: true },
-    { name: 'Closet', path: '/#closet', icon: Shirt, protected: true },
-    { name: 'Outfits', path: '/#outfits', icon: LayoutPanelTop, protected: true },
+    { name: 'Persona', path: '/#persona', id: 'persona', icon: UserCircle, protected: true },
+    { name: 'Closet', path: '/#closet', id: 'closet', icon: Shirt, protected: true },
+    { name: 'Outfits', path: '/#outfits', id: 'outfits', icon: LayoutPanelTop, protected: true },
     { name: 'Demo', path: '/demo', icon: PlayCircle, protected: false, publicOnly: true },
   ];
 
-  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, path: string) => {
-    if (path.startsWith('/#')) {
-      const id = path.replace('/#', '');
+  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, link: any) => {
+    if (link.path.startsWith('/#')) {
       if (location.pathname === '/') {
         e.preventDefault();
-        const element = document.getElementById(id);
+        const element = document.getElementById(link.id);
         if (element) {
           element.scrollIntoView({ behavior: 'smooth' });
-          window.history.pushState(null, '', `/#${id}`);
-          setActiveHash(`#${id}`);
+          window.history.pushState(null, '', `/#${link.id}`);
+          setActiveSection(link.id);
         }
       }
     }
@@ -71,14 +83,14 @@ const Navbar = () => {
                 : true;
 
             const isActive = location.pathname === '/' 
-              ? (activeHash === link.path.replace('/', '') || (link.name === 'Persona' && !activeHash))
+              ? activeSection === link.id
               : location.pathname === link.path;
 
             return showLink && (
               <Link
                 key={link.path}
                 to={link.path}
-                onClick={(e) => handleNavClick(e, link.path)}
+                onClick={(e) => handleNavClick(e, link)}
                 className={cn(
                   "text-sm font-medium transition-all relative py-1",
                   isActive ? "text-accent" : "text-text-secondary hover:text-text-primary"
