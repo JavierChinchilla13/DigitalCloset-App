@@ -16,10 +16,37 @@ const DashboardPage = () => {
       if (element) {
         element.scrollIntoView({ behavior: 'smooth' });
       }
-    } else {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
-  }, [location]);
+  }, [location.hash]); // Only run when hash changes explicitly
+
+  useEffect(() => {
+    const sections = ['persona', 'closet', 'outfits'];
+    const observerOptions = {
+      root: null,
+      rootMargin: '-40% 0px -40% 0px', // Center-ish trigger
+      threshold: 0
+    };
+
+    const observerCallback = (entries: IntersectionObserverEntry[]) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          const id = entry.target.id;
+          // Update hash without triggering a full route change or jump
+          window.history.replaceState(null, '', `/#${id}`);
+          // Manually dispatch a popstate event so components using useLocation/location.hash update
+          window.dispatchEvent(new Event('popstate'));
+        }
+      });
+    };
+
+    const observer = new IntersectionObserver(observerCallback, observerOptions);
+    sections.forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) observer.observe(el);
+    });
+
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <motion.div

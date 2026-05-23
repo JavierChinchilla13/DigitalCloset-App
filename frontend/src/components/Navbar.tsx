@@ -9,6 +9,22 @@ const Navbar = () => {
   const { isAuthenticated, user, logout } = useAuthStore();
   const location = useLocation();
   const navigate = useNavigate();
+  const [activeHash, setActiveHash] = React.useState(window.location.hash);
+
+  // Sync local hash state with window location
+  React.useEffect(() => {
+    const handleHashChange = () => {
+      setActiveHash(window.location.hash);
+    };
+
+    window.addEventListener('popstate', handleHashChange);
+    return () => window.removeEventListener('popstate', handleHashChange);
+  }, []);
+
+  // Update hash when react-router location changes
+  React.useEffect(() => {
+    setActiveHash(location.hash);
+  }, [location.hash]);
 
   const navLinks = [
     { name: 'Persona', path: '/#persona', icon: UserCircle, protected: true },
@@ -18,21 +34,16 @@ const Navbar = () => {
   ];
 
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, path: string) => {
-    // If it's an anchor on the current page
     if (path.startsWith('/#')) {
       const id = path.replace('/#', '');
-      
-      // If we are already on the dashboard, just scroll
       if (location.pathname === '/') {
         e.preventDefault();
         const element = document.getElementById(id);
         if (element) {
           element.scrollIntoView({ behavior: 'smooth' });
-          // Update URL hash without reload
           window.history.pushState(null, '', `/#${id}`);
+          setActiveHash(`#${id}`);
         }
-      } else {
-        // If we are on another page, let the default Link behavior take us to / and the Dashboard's useEffect will handle the scroll
       }
     }
   };
@@ -60,7 +71,7 @@ const Navbar = () => {
                 : true;
 
             const isActive = location.pathname === '/' 
-              ? (location.hash === link.path.replace('/', '') || (link.name === 'Persona' && !location.hash))
+              ? (activeHash === link.path.replace('/', '') || (link.name === 'Persona' && !activeHash))
               : location.pathname === link.path;
 
             return showLink && (
