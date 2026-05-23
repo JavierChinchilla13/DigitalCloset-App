@@ -3,6 +3,24 @@ export enum Role {
   ROLE_ADMIN = 'ROLE_ADMIN'
 }
 
+export enum PersonaType {
+  MALE = 'MALE',
+  FEMALE = 'FEMALE'
+}
+
+export interface PersonaState {
+  type: PersonaType;
+  skinTone?: string;
+  bodyType?: string;
+  height?: number;
+  hairId?: string;
+  topId?: number | null;
+  bottomId?: number | null;
+  shoesId?: number | null;
+  accessoryId?: number | null;
+  jacketId?: number | null;
+}
+
 export interface User {
   userId: number;
   email: string;
@@ -63,7 +81,7 @@ export interface OutfitRequest {
   name: string;
   description?: string;
   items: {
-    itemId: number; // Corrected to match backend OutfitItemRequest
+    itemId: number;
     positionX: number;
     positionY: number;
     scaleX: number;

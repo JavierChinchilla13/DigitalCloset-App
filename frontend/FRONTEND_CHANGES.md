@@ -45,6 +45,16 @@
     - **Lean Backend Strategy**: Spring Boot only persists the secure `imageUrl` and metadata, optimizing server resources.
     - **Secure Configuration**: Uses `.env` for Cloudinary credentials and unsigned presets.
 
+### 7. Modern Persona System (Phase 4)
+- **Layered Rendering Architecture**:
+    - **Modular Stack**: Developed a `PersonaRenderer` that manages a stack of absolute-positioned layers (`Base`, `Hair`, `Top`, `Bottom`, etc.).
+    - **Professional Illustration Assets**: Replaced abstract SVG silhouettes with high-quality, modern flat-vector humanoid characters for Male and Female bases.
+    - **Future-Proofing**: Prepared `PersonaState` and rendering logic for multi-layered clothing overlays and body customization.
+- **Cinematic Experience**:
+    - **Fluid Animations**: Implemented a floating idle animation using Framer Motion, along with smooth transitions during persona switching.
+    - **Atmospheric Visuals**: Integrated `PersonaSpotlight` with particle effects and radial glows to create a high-end presentation.
+    - **Consistent Proportions**: Standardized asset dimensions and viewBox to ensure perfect alignment of future clothing layers.
+
 ---
 
 ## Technical Highlights
