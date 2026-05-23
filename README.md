@@ -1,31 +1,30 @@
 # DigitalCloset - Virtual Wardrobe & Outfit Builder
 
-DigitalCloset is a full-stack web application designed to help users manage their personal wardrobe digitally and create outfits using an interactive canvas.
+DigitalCloset is a premium full-stack web application designed to help users manage their personal wardrobe digitally and orchestrate professional outfits using a high-fidelity layered persona system.
 
 ## Features
 
-- **Personal Closet**: Upload and categorize your clothing items (Tops, Bottoms, Shoes, etc.).
-- **Interactive Outfit Builder**: Drag, drop, scale, and rotate your clothing items on a canvas to visualize new looks.
-- **User Authentication**: Secure JWT-based authentication with Role-Based Access Control (RBAC).
-- **Dashboard**: A centralized view of your avatar, recent closet items, and saved outfits.
-- **Responsive Design**: Modern, dark-themed UI built with React and Tailwind CSS.
+- **PNG-Layered Persona System**: Replaced abstract silhouettes with high-quality mannequin bases. Visualize garments in real-time with precise Z-index layering (Tops, Bottoms, Shoes, Outerwear, Accessories).
+- **High-Density Virtual Closet**: Efficiently manage hundreds of garments with a compact, responsive grid. Features instant search, category filtering, and a personalized Favorites system.
+- **Local Style Orchestration**: Create, save, duplicate, and edit outfit combinations. Uses a hybrid storage approach with local persistence for rapid style iteration.
+- **Cloudinary Integration**: Secure, direct-to-cloud image uploads with real-time previews and automatic metadata synchronization.
+- **Modern "Fashion-Tech" UI**: A dark luxury aesthetic built with Framer Motion for cinematic transitions, glass-morphic elements, and studio-grade lighting effects.
 
 ## Tech Stack
 
 ### Backend
 - **Java 21** with **Spring Boot 3.3.0**
-- **Spring Security** & **JWT** for authentication
-- **PostgreSQL** for data persistence
-- **Maven** for dependency management
+- **Spring Security** & **JWT** for secure authentication
+- **PostgreSQL** for core data persistence
+- **RESTful API** architecture with feature-based modularity
 
 ### Frontend
 - **React 19** with **TypeScript**
-- **Vite** for fast development and building
-- **Zustand** for state management
-- **React Konva** for the 2D canvas outfit builder
-- **Framer Motion** for smooth UI animations
-- **Tailwind CSS** for modern styling
-- **Lucide React** for iconography
+- **Vite** for optimized development and bundling
+- **Zustand** for state management (Auth, Clothing, Outfits)
+- **Framer Motion** for layered rendering and UI orchestration
+- **Tailwind CSS** for professional-grade responsive styling
+- **Lucide React** for consistent minimalist iconography
 
 ## Getting Started
 
@@ -37,10 +36,14 @@ DigitalCloset is a full-stack web application designed to help users manage thei
 ### Frontend Setup
 1. Navigate to the `frontend` directory.
 2. Install dependencies: `npm install`.
-3. Run development server: `npm run dev`.
+3. Set up `.env` with your Cloudinary credentials.
+4. Run development server: `npm run dev`.
 
 ## Project Status
 
-- **Phase 1: Backend Foundation**: Completed (Auth, User, Clothing, Outfit APIs).
-- **Phase 2: Core Frontend**: Completed (Dashboard, Outfit Builder, Integration with APIs).
-- **Phase 3: Advanced Features**: In Progress (Cloudinary Image uploads, Social sharing, AI recommendations).
+- **Phase 1: Backend Foundation**: Completed (Auth, User, Clothing APIs).
+- **Phase 2: Core Frontend**: Completed (Dashboard, Integration with APIs).
+- **Phase 3: Image Infrastructure**: Completed (Cloudinary integration, interactive uploads).
+- **Phase 4: Persona Evolution**: Completed (PNG-based layering, 2D mannequin system).
+- **Phase 5: Wardrobe Management**: Completed (High-density closet, Search, Favorites, Full Management Page).
+- **Phase 6: Style Orchestration**: Completed (Local Outfit Store, Multi-page navigation flow).

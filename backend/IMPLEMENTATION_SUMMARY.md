@@ -36,18 +36,16 @@
     - `DELETE /api/clothing/{id}`: Delete an item (with ownership verification).
 - **Categories**: `TOP`, `BOTTOM`, `SHOES`, `ACCESSORY`, `JACKET`.
 
-### 5. Outfit System
-- **Entities**: `Outfit` and `OutfitItem` (Junction table with canvas state).
-- **Canvas State Persistence**: Saves `position_x`, `position_y`, `scale_x`, `scale_y`, `rotation`, and `item_order` (zIndex).
-- **Endpoints**:
-    - `POST /api/outfits`: Save a full outfit configuration.
-    - `GET /api/outfits`: List all saved outfits for the user.
-    - `PUT /api/outfits/{id}`: Update an existing outfit and its items.
-    - `DELETE /api/outfits/{id}`: Remove a saved outfit.
+### 5. Outfit System (Evolution)
+- **Entities**: `Outfit` and `OutfitItem` (Junction table).
+- **Architecture Shift**: The system has transitioned from a free-form Konva canvas builder to a structured **Layered Persona System**. 
+- **Hybrid Storage**: 
+    - **Cloud Persistence**: Garments and basic outfit metadata are stored in PostgreSQL.
+    - **Local Orchestration**: Real-time style sets and user-defined outfit combinations are currently prioritized in the `LocalOutfitStore` for zero-latency iteration and instant "Wear Style" application.
 
 ---
 
 ## Technical Decisions
-- **Manual POJOs**: I used standard Java Constructors/Getters/Setters instead of Lombok to ensure 100% compatibility with the local Java 21 environment during this phase.
-- **Double Precision**: Canvas coordinates use `Double` to ensure precision for `react-konva` rendering.
-- **Transactional saving**: Outfit saving uses `@Transactional` to ensure the outfit and its items are saved as an atomic unit.
+- **Manual POJOs**: I used standard Java Constructors/Getters/Setters instead of Lombok to ensure 100% compatibility with the local Java 21 environment.
+- **Soft Deletes**: Implemented `isActive` flags to preserve data integrity while providing a clean user experience.
+- **Transactional Consistency**: Garment and user operations use `@Transactional` to ensure data atomicity during complex updates.
