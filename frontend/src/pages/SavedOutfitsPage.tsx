@@ -1,5 +1,5 @@
-import React from 'react';
-import { motion } from 'framer-motion';
+import React, { useEffect, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Sparkles, Shirt, LayoutGrid, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useLocalOutfitStore } from '../store/useLocalOutfitStore';
@@ -9,19 +9,19 @@ import SectionWrapper from '../components/SectionWrapper';
 const SavedOutfitsPage = () => {
   const { outfits, _hasHydrated } = useLocalOutfitStore();
   const navigate = useNavigate();
+  const [showContent, setShowContent] = useState(false);
 
-  if (!_hasHydrated) {
-    return (
-      <div className="min-h-screen bg-background-main flex items-center justify-center">
-        <Loader2 className="animate-spin text-accent" size={40} />
-      </div>
-    );
-  }
+  // Robust content visibility trigger
+  useEffect(() => {
+    if (_hasHydrated) {
+      setShowContent(true);
+    }
+  }, [_hasHydrated]);
 
   return (
-    <div className="min-h-screen bg-background-main pt-24 pb-20">
-      <SectionWrapper>
-        {/* Header Section */}
+    <div className="relative min-h-screen pb-20">
+      <SectionWrapper className="pt-12">
+        {/* Header Section - Always render to avoid complete "blank" screen */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-8 mb-16">
           <div className="space-y-4">
             <div className="flex items-center gap-2">
@@ -45,51 +45,70 @@ const SavedOutfitsPage = () => {
           </button>
         </div>
 
-        {/* Outfits Grid */}
-        {outfits.length === 0 ? (
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="py-32 flex flex-col items-center justify-center text-center border-2 border-dashed border-white/5 rounded-[3rem] bg-white/[0.01]"
-          >
-            <div className="w-24 h-24 rounded-full bg-white/5 flex items-center justify-center mb-8 opacity-20">
-              <Shirt size={40} className="text-text-secondary" />
-            </div>
-            <h3 className="text-xl font-light text-white tracking-[0.3em] uppercase mb-4">Your collection is empty</h3>
-            <p className="text-text-secondary text-[10px] font-black tracking-widest uppercase mb-12 opacity-30">
-              Start orchestrating your first digital style set
-            </p>
-            <button 
-              onClick={() => navigate('/outfits/new')}
-              className="px-10 py-5 border border-white/10 hover:border-white/30 text-white font-black rounded-full flex items-center gap-3 transition-all backdrop-blur-md"
+        {/* Dynamic Content Area */}
+        <AnimatePresence mode="wait">
+          {!showContent ? (
+            <motion.div 
+              key="loader"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="py-32 flex flex-col items-center justify-center text-center"
             >
-              <LayoutGrid size={18} className="text-text-secondary" />
-              <span className="text-[11px] tracking-[0.2em] uppercase">Open Builder</span>
-            </button>
-          </motion.div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-10">
-            {/* Inline Add Card */}
-            <motion.button
-              whileHover={{ y: -8, scale: 0.98 }}
-              onClick={() => navigate('/outfits/new')}
-              className="aspect-[3/4] rounded-[2rem] border-2 border-dashed border-white/5 flex flex-col items-center justify-center gap-6 group hover:border-accent/40 hover:bg-accent/5 transition-all"
+              <Loader2 className="animate-spin text-accent mb-4" size={40} />
+              <p className="text-[8px] font-black tracking-[0.4em] text-white uppercase opacity-20">Synchronizing...</p>
+            </motion.div>
+          ) : outfits.length === 0 ? (
+            <motion.div 
+              key="empty"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="py-32 flex flex-col items-center justify-center text-center border-2 border-dashed border-white/5 rounded-[3rem] bg-white/[0.01]"
             >
-              <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-accent group-hover:text-white transition-all shadow-xl">
-                <Plus size={24} />
+              <div className="w-24 h-24 rounded-full bg-white/5 flex items-center justify-center mb-8 opacity-20">
+                <Shirt size={40} className="text-text-secondary" />
               </div>
-              <div className="text-center px-4">
-                <span className="text-[10px] font-black tracking-[0.3em] text-text-secondary group-hover:text-white transition-colors uppercase">
-                  ORCHESTRATE <br /> NEW STYLE
-                </span>
-              </div>
-            </motion.button>
+              <h3 className="text-xl font-light text-white tracking-[0.3em] uppercase mb-4">Your collection is empty</h3>
+              <p className="text-text-secondary text-[10px] font-black tracking-widest uppercase mb-12 opacity-30">
+                Start orchestrating your first digital style set
+              </p>
+              <button 
+                onClick={() => navigate('/outfits/new')}
+                className="px-10 py-5 border border-white/10 hover:border-white/30 text-white font-black rounded-full flex items-center gap-3 transition-all backdrop-blur-md"
+              >
+                <LayoutGrid size={18} className="text-text-secondary" />
+                <span className="text-[11px] tracking-[0.2em] uppercase">Open Builder</span>
+              </button>
+            </motion.div>
+          ) : (
+            <motion.div 
+              key="grid"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-10"
+            >
+              {/* Inline Add Card */}
+              <motion.button
+                whileHover={{ y: -8, scale: 0.98 }}
+                onClick={() => navigate('/outfits/new')}
+                className="aspect-[3/4] rounded-[2rem] border-2 border-dashed border-white/5 flex flex-col items-center justify-center gap-6 group hover:border-accent/40 hover:bg-accent/5 transition-all"
+              >
+                <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-accent group-hover:text-white transition-all shadow-xl">
+                  <Plus size={24} />
+                </div>
+                <div className="text-center px-4">
+                  <span className="text-[10px] font-black tracking-[0.3em] text-text-secondary group-hover:text-white transition-colors uppercase">
+                    ORCHESTRATE <br /> NEW STYLE
+                  </span>
+                </div>
+              </motion.button>
 
-            {outfits.map((outfit) => (
-              <OutfitCard key={outfit.id} outfit={outfit} />
-            ))}
-          </div>
-        )}
+              {outfits.map((outfit) => (
+                <OutfitCard key={outfit.id} outfit={outfit} />
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </SectionWrapper>
 
       {/* Background Cinematic Detail */}

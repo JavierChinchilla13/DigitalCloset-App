@@ -65,6 +65,7 @@ export const useLocalOutfitStore = create<LocalOutfitStore>()(
     }),
     {
       name: 'saved-outfits-storage',
+      partialize: (state) => ({ outfits: state.outfits }),
       onRehydrateStorage: (state) => {
         return () => state?.setHasHydrated(true);
       }
