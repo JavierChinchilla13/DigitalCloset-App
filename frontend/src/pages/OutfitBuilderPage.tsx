@@ -1,268 +1,239 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Stage, Layer, Image as KonvaImage, Transformer } from 'react-konva';
-import { useClothingStore } from '../store/useClothingStore';
-import { useOutfitStore } from '../store/useOutfitStore';
-import { ClothingCategory } from '../types';
-import type { ClothingItem } from '../types';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Save, Trash2, RotateCcw, Layout, Shirt, ChevronLeft, Loader2, Plus } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import useImage from 'use-image';
-
-// Individual Canvas Item Component
-const URLImage = ({ 
-  item, 
-  isSelected, 
-  onSelect, 
-  onChange 
-}: { 
-  item: any, 
-  isSelected: boolean, 
-  onSelect: () => void, 
-  onChange: (newAttrs: any) => void 
-}) => {
-  const [img] = useImage(item.imageUrl, 'anonymous');
-  const shapeRef = useRef<any>();
-  const trRef = useRef<any>();
-
-  useEffect(() => {
-    if (isSelected) {
-      trRef.current.nodes([shapeRef.current]);
-      trRef.current.getLayer().batchDraw();
-    }
-  }, [isSelected]);
-
-  return (
-    <React.Fragment>
-      <KonvaImage
-        image={img}
-        onClick={onSelect}
-        onTap={onSelect}
-        ref={shapeRef}
-        {...item}
-        draggable
-        onDragEnd={(e) => {
-          onChange({
-            ...item,
-            x: e.target.x(),
-            y: e.target.y(),
-          });
-        }}
-        onTransformEnd={() => {
-          const node = shapeRef.current;
-          const scaleX = node.scaleX();
-          const scaleY = node.scaleY();
-          node.scaleX(1);
-          node.scaleY(1);
-          onChange({
-            ...item,
-            x: node.x(),
-            y: node.y(),
-            width: Math.max(5, node.width() * scaleX),
-            height: Math.max(node.height() * scaleY),
-            rotation: node.rotation(),
-          });
-        }}
-      />
-      {isSelected && (
-        <Transformer
-          ref={trRef}
-          boundBoxFunc={(oldBox, newBox) => {
-            if (Math.abs(newBox.width) < 5 || Math.abs(newBox.height) < 5) {
-              return oldBox;
-            }
-            return newBox;
-          }}
-        />
-      )}
-    </React.Fragment>
-  );
-};
+import { 
+  ChevronLeft, 
+  Save, 
+  Loader2, 
+  Sparkles, 
+  Trash2, 
+  RotateCcw,
+  Plus,
+  ArrowRight
+} from 'lucide-react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { useClothingStore } from '../store/useClothingStore';
+import { usePersonaStore } from '../store/usePersonaStore';
+import { useLocalOutfitStore } from '../store/useLocalOutfitStore';
+import { ClothingCategory } from '../types';
+import PersonaRenderer from '../components/PersonaRenderer';
 
 const OutfitBuilderPage = () => {
-  const { items: closetItems, fetchItems, isLoading: loadingCloset } = useClothingStore();
-  const { saveOutfit, isLoading: savingOutfit } = useOutfitStore();
-  const [canvasItems, setCanvasItems] = useState<any[]>([]);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [activeCategory, setActiveCategory] = useState<ClothingCategory>(ClothingCategory.TOP);
-  const [outfitName, setOutfitName] = useState('My New Outfit');
+  const { id } = useParams();
   const navigate = useNavigate();
+  const { items: closetItems, fetchItems, isLoading: loadingCloset } = useClothingStore();
+  const { persona, updatePersona, setEquippedItem } = usePersonaStore();
+  const { outfits, saveOutfit, updateOutfit } = useLocalOutfitStore();
+
+  const [outfitName, setOutfitName] = useState('New Style');
+  const [activeCategory, setActiveCategory] = useState<ClothingCategory>(ClothingCategory.TOP);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     fetchItems();
-  }, []);
-
-  const addToCanvas = (clothingItem: ClothingItem) => {
-    const newItem = {
-      id: `canvas-${Date.now()}`,
-      itemId: clothingItem.itemId,
-      imageUrl: clothingItem.imageUrl,
-      x: 100,
-      y: 100,
-      width: 200,
-      height: 250,
-      rotation: 0,
-      itemOrder: canvasItems.length,
-    };
-    setCanvasItems([...canvasItems, newItem]);
-  };
+    
+    // If editing, load the outfit
+    if (id) {
+      const existing = outfits.find(o => o.id === id);
+      if (existing) {
+        setOutfitName(existing.name);
+        updatePersona(existing.items);
+      }
+    }
+  }, [id, fetchItems, outfits, updatePersona]);
 
   const handleSave = async () => {
-    if (canvasItems.length === 0) return;
+    setIsSaving(true);
     
-    const requestData = {
+    // In a real app, we'd use html2canvas or similar to capture the PersonaRenderer
+    // For this prototype, we'll use a placeholder or the first item's image
+    const previewImage = closetItems.find(i => i.itemId === persona.topId)?.imageUrl || 
+                         closetItems.find(i => i.itemId === persona.bottomId)?.imageUrl ||
+                         "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=600&h=800&fit=crop";
+
+    const outfitData = {
       name: outfitName,
-      items: canvasItems.map((item, index) => ({
-        itemId: item.itemId,
-        positionX: item.x,
-        positionY: item.y,
-        scaleX: item.width / 200, // Normalized
-        scaleY: item.height / 250, // Normalized
-        rotation: item.rotation,
-        itemOrder: index,
-      })),
+      preview: previewImage,
+      items: {
+        topId: persona.topId,
+        bottomId: persona.bottomId,
+        shoesId: persona.shoesId,
+        accessoryId: persona.accessoryId,
+        jacketId: persona.jacketId,
+      }
     };
 
     try {
-      await saveOutfit(requestData);
-      navigate('/outfits');
+      if (id) {
+        updateOutfit(id, outfitData);
+      } else {
+        saveOutfit(outfitData);
+      }
+      setTimeout(() => {
+        setIsSaving(false);
+        navigate('/outfits');
+      }, 800);
     } catch (err) {
-      console.error('Failed to save outfit', err);
+      setIsSaving(false);
     }
   };
 
-  const clearCanvas = () => setCanvasItems([]);
-  const removeSelectedItem = () => {
-    if (selectedId) {
-      setCanvasItems(canvasItems.filter(i => i.id !== selectedId));
-      setSelectedId(null);
+  const clearLook = () => {
+    updatePersona({
+      topId: null,
+      bottomId: null,
+      shoesId: null,
+      accessoryId: null,
+      jacketId: null,
+    });
+  };
+
+  const isEquipped = (itemId: number) => {
+    return Object.values(persona).includes(itemId);
+  };
+
+  const toggleItem = (item: any) => {
+    if (isEquipped(item.itemId)) {
+      setEquippedItem(item.category, null);
+    } else {
+      setEquippedItem(item.category, item.itemId);
     }
   };
 
   return (
-    <div className="min-h-screen bg-background-main flex flex-col md:flex-row pt-24 pb-12 px-6 gap-8">
-      {/* Sidebar: Wardrobe */}
-      <aside className="w-full md:w-80 glass-panel rounded-3xl p-6 flex flex-col max-h-[80vh]">
-        <div className="flex items-center gap-2 mb-8 text-white uppercase tracking-widest text-xs font-black">
-          <Shirt size={16} className="text-accent" />
-          <span>YOUR WARDROBE</span>
-        </div>
-
-        {/* Categories Toggle */}
-        <div className="flex gap-2 mb-6 overflow-x-auto no-scrollbar">
-          {Object.values(ClothingCategory).map(cat => (
-            <button
-              key={cat}
-              onClick={() => setActiveCategory(cat)}
-              className={`px-4 py-2 rounded-full text-[10px] font-bold transition-all whitespace-nowrap ${
-                activeCategory === cat ? 'bg-accent text-white' : 'bg-white/5 text-text-secondary hover:text-white'
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
-
-        {/* Items Grid */}
-        <div className="flex-grow overflow-y-auto pr-2 space-y-4 no-scrollbar">
-          {loadingCloset ? (
-            <div className="flex items-center justify-center py-20">
-              <Loader2 className="animate-spin text-accent" size={32} />
-            </div>
-          ) : (
-            closetItems.filter(i => i.category === activeCategory).map(item => (
-              <motion.div
-                key={item.itemId}
-                whileHover={{ scale: 1.02, y: -4 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => addToCanvas(item)}
-                className="relative aspect-[3/4] rounded-2xl overflow-hidden cursor-pointer premium-card group"
-              >
-                <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover transition-transform group-hover:scale-110" />
-                <div className="absolute inset-0 bg-accent/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                  <Plus className="text-white" size={32} />
-                </div>
-              </motion.div>
-            ))
-          )}
-        </div>
-      </aside>
-
-      {/* Main Canvas Area */}
-      <main className="flex-grow flex flex-col gap-6 h-[80vh]">
-        <header className="flex justify-between items-center glass-panel px-8 py-4 rounded-2xl">
-          <div className="flex items-center gap-4">
-            <button onClick={() => navigate(-1)} className="p-2 hover:bg-white/5 rounded-full text-text-secondary transition-colors">
-              <ChevronLeft size={20} />
-            </button>
+    <div className="h-screen bg-background-main flex flex-col overflow-hidden pt-16">
+      {/* Dynamic Header */}
+      <header className="px-8 py-6 border-b border-white/5 bg-background-secondary/20 flex items-center justify-between z-20">
+        <div className="flex items-center gap-6">
+          <button 
+            onClick={() => navigate('/outfits')}
+            className="p-3 hover:bg-white/5 rounded-xl text-text-secondary transition-colors border border-white/5"
+          >
+            <ChevronLeft size={20} />
+          </button>
+          <div className="space-y-1">
             <input 
               value={outfitName} 
               onChange={e => setOutfitName(e.target.value)}
-              className="bg-transparent text-white font-bold tracking-widest uppercase border-b border-transparent focus:border-accent focus:outline-none px-2"
+              className="bg-transparent text-xl font-light text-white tracking-widest uppercase focus:outline-none border-b border-transparent focus:border-accent/50 transition-all"
+              placeholder="ENTER STYLE NAME"
             />
+            <p className="text-[8px] font-black text-accent tracking-[0.4em] uppercase">Style Orchestration Mode</p>
           </div>
-          <div className="flex items-center gap-3">
-            <button onClick={clearCanvas} className="p-2 hover:bg-white/5 rounded-full text-text-secondary hover:text-red-400 transition-colors" title="Clear All">
-              <RotateCcw size={20} />
-            </button>
-            {selectedId && (
-              <button onClick={removeSelectedItem} className="p-2 hover:bg-white/5 rounded-full text-red-400 transition-colors" title="Remove Item">
-                <Trash2 size={20} />
-              </button>
-            )}
-            <button 
-              onClick={handleSave} 
-              disabled={canvasItems.length === 0 || savingOutfit}
-              className="ml-4 bg-accent hover:bg-accent-hover disabled:opacity-50 text-white px-6 py-2 rounded-full font-bold flex items-center gap-2 transition-all shadow-lg shadow-accent/20"
-            >
-              {savingOutfit ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
-              <span>SAVE STYLE</span>
-            </button>
-          </div>
-        </header>
+        </div>
 
-        <div className="flex-grow bg-[#14171d] rounded-[2.5rem] relative overflow-hidden border border-white/5 shadow-inner">
-          {/* Canvas Background Grid */}
+        <div className="flex items-center gap-4">
+          <button 
+            onClick={clearLook}
+            className="p-3 hover:bg-white/5 rounded-xl text-text-secondary hover:text-white transition-colors border border-white/5"
+            title="Reset Look"
+          >
+            <RotateCcw size={18} />
+          </button>
+          <button 
+            onClick={handleSave}
+            disabled={isSaving}
+            className="px-8 py-3 bg-white text-background-main font-black text-[10px] rounded-xl flex items-center gap-3 transition-all hover:scale-105 active:scale-95 shadow-2xl shadow-white/5 tracking-[0.2em]"
+          >
+            {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+            {id ? 'UPDATE STYLE' : 'SAVE TO COLLECTION'}
+          </button>
+        </div>
+      </header>
+
+      <div className="flex-grow flex overflow-hidden">
+        {/* Left Panel: Category Selector */}
+        <aside className="w-20 border-r border-white/5 flex flex-col items-center py-8 gap-8 bg-black/20">
+          {Object.values(ClothingCategory).map((cat) => (
+            <button
+              key={cat}
+              onClick={() => setActiveCategory(cat)}
+              className={`
+                relative w-12 h-12 rounded-xl flex items-center justify-center transition-all
+                ${activeCategory === cat ? 'bg-accent text-white shadow-lg shadow-accent/20' : 'text-text-secondary hover:text-white hover:bg-white/5'}
+              `}
+            >
+              <div className="text-[8px] font-black rotate-[-90deg] whitespace-nowrap tracking-widest uppercase">
+                {cat}
+              </div>
+              {activeCategory === cat && (
+                <motion.div 
+                  layoutId="activeTab"
+                  className="absolute -right-[1px] w-[2px] h-8 bg-accent"
+                />
+              )}
+            </button>
+          ))}
+        </aside>
+
+        {/* Center Panel: Wardrobe Grid */}
+        <aside className="w-80 border-r border-white/5 flex flex-col bg-background-secondary/5">
+          <div className="p-6 border-b border-white/5">
+            <h3 className="text-[10px] font-black text-white tracking-[0.3em] uppercase opacity-50 flex items-center gap-2">
+              <Sparkles size={12} className="text-accent" />
+              Available Pieces
+            </h3>
+          </div>
+          <div className="flex-grow overflow-y-auto no-scrollbar p-6 space-y-4">
+            {loadingCloset ? (
+              <div className="flex flex-col items-center justify-center py-20 gap-4 opacity-20">
+                <Loader2 className="animate-spin text-accent" size={24} />
+                <p className="text-[8px] font-black uppercase tracking-widest">Syncing Wardrobe...</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-4">
+                {closetItems.filter(i => i.category === activeCategory).map((item) => {
+                  const active = isEquipped(item.itemId);
+                  return (
+                    <motion.div
+                      key={item.itemId}
+                      whileHover={{ y: -4 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => toggleItem(item)}
+                      className={`
+                        relative aspect-[3/4] rounded-2xl overflow-hidden cursor-pointer border transition-all duration-300
+                        ${active ? 'border-accent ring-2 ring-accent/20' : 'border-white/5 hover:border-white/20'}
+                      `}
+                    >
+                      <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
+                      <div className={`
+                        absolute inset-0 bg-accent/20 flex items-center justify-center transition-opacity
+                        ${active ? 'opacity-100' : 'opacity-0'}
+                      `}>
+                        <div className="bg-white text-accent p-2 rounded-full shadow-xl">
+                          <Plus size={16} className="rotate-45" />
+                        </div>
+                      </div>
+                      <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent">
+                        <p className="text-[8px] font-bold text-white line-clamp-1 uppercase tracking-wider">{item.name}</p>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </aside>
+
+        {/* Right Panel: Persona Preview */}
+        <main className="flex-grow relative bg-background-main flex items-center justify-center">
           <div className="absolute inset-0 opacity-[0.03] pointer-events-none" 
             style={{ 
               backgroundImage: 'radial-gradient(#5B8CFF 1px, transparent 1px)', 
-              backgroundSize: '30px 30px' 
+              backgroundSize: '40px 40px' 
             }} 
           />
           
-          <Stage 
-            width={1000} 
-            height={700}
-            onClick={(e) => {
-              const clickedOnEmpty = e.target === e.target.getStage();
-              if (clickedOnEmpty) setSelectedId(null);
-            }}
-          >
-            <Layer>
-              {canvasItems.map((item, i) => (
-                <URLImage
-                  key={item.id}
-                  item={item}
-                  isSelected={item.id === selectedId}
-                  onSelect={() => setSelectedId(item.id)}
-                  onChange={(newAttrs) => {
-                    const items = canvasItems.slice();
-                    items[i] = newAttrs;
-                    setCanvasItems(items);
-                  }}
-                />
-              ))}
-            </Layer>
-          </Stage>
+          <div className="w-full h-full max-w-2xl max-h-[85vh]">
+            <PersonaRenderer persona={persona} />
+          </div>
 
-          {canvasItems.length === 0 && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center text-text-secondary pointer-events-none">
-              <Layout size={64} className="opacity-10 mb-6" />
-              <p className="text-xs font-black tracking-[0.3em] uppercase opacity-20">Drop garments here to start styling</p>
-            </div>
-          )}
-        </div>
-      </main>
+          {/* Quick HUD Detail */}
+          <div className="absolute bottom-8 right-8 flex flex-col items-end gap-2 opacity-20">
+            <p className="text-[6px] font-black tracking-[0.5em] text-white uppercase">Real-time Layering Active</p>
+            <div className="h-[1px] w-24 bg-gradient-to-l from-white to-transparent" />
+          </div>
+        </main>
+      </div>
     </div>
   );
 };
