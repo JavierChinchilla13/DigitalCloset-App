@@ -1,12 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { ChevronRight, Loader2, Plus, LayoutPanelTop } from 'lucide-react';
-import { ClothingCategory } from '../types';
+import { Loader2, Plus, LayoutPanelTop } from 'lucide-react';
 import type { ClothingItem } from '../types';
 import SectionWrapper from '../components/SectionWrapper';
 import { useClothingStore } from '../store/useClothingStore';
 import { useNavigate } from 'react-router-dom';
-import UploadGarmentModal from '../components/UploadGarmentModal';
+import UploadFlow from '../components/FittingTool/UploadFlow';
 import ClothingCard from '../components/ClothingCard';
 import ClothingDetailsModal from '../components/ClothingDetailsModal';
 import EditClothingModal from '../components/EditClothingModal';
@@ -127,7 +126,7 @@ const ClosetSection = () => {
       )}
 
       {/* Modals */}
-      <UploadGarmentModal 
+      <UploadFlow 
         isOpen={isUploadModalOpen} 
         onClose={() => setIsUploadModalOpen(false)} 
       />

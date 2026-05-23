@@ -4,7 +4,7 @@ const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
 const UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
 
 export const cloudinaryService = {
-  uploadImage: async (file: File): Promise<string> => {
+  uploadImage: async (file: File | Blob): Promise<string> => {
     if (!CLOUD_NAME || !UPLOAD_PRESET) {
       throw new Error('Cloudinary configuration is missing. Please check your .env file.');
     }

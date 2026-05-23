@@ -2,6 +2,7 @@ package com.javier.closetapp.clothing.service;
 
 import com.javier.closetapp.clothing.dto.ClothingRequest;
 import com.javier.closetapp.clothing.dto.ClothingResponse;
+import com.javier.closetapp.clothing.dto.ClothingTransformDTO;
 import com.javier.closetapp.clothing.entity.ClothingItem;
 import com.javier.closetapp.clothing.repository.ClothingRepository;
 import com.javier.closetapp.user.entity.User;
@@ -38,6 +39,17 @@ public class ClothingService {
         item.setDescription(request.getDescription());
         item.setCategory(request.getCategory());
         item.setImageUrl(request.getImageUrl());
+        item.setPersonaType(request.getPersonaType());
+        
+        if (request.getTransform() != null) {
+            item.setTransformX(request.getTransform().getX());
+            item.setTransformY(request.getTransform().getY());
+            item.setTransformScale(request.getTransform().getScale());
+            item.setTransformRotation(request.getTransform().getRotation());
+            item.setTransformWidth(request.getTransform().getWidth());
+            item.setTransformHeight(request.getTransform().getHeight());
+        }
+        
         item.setOwner(user);
 
         ClothingItem saved = clothingRepository.save(item);
@@ -73,6 +85,17 @@ public class ClothingService {
         if (request.getImageUrl() != null) {
             item.setImageUrl(request.getImageUrl());
         }
+        if (request.getPersonaType() != null) {
+            item.setPersonaType(request.getPersonaType());
+        }
+        if (request.getTransform() != null) {
+            item.setTransformX(request.getTransform().getX());
+            item.setTransformY(request.getTransform().getY());
+            item.setTransformScale(request.getTransform().getScale());
+            item.setTransformRotation(request.getTransform().getRotation());
+            item.setTransformWidth(request.getTransform().getWidth());
+            item.setTransformHeight(request.getTransform().getHeight());
+        }
 
         ClothingItem updated = clothingRepository.save(item);
         return mapToResponse(updated);
@@ -98,12 +121,23 @@ public class ClothingService {
         
         String formattedDate = createdAt.format(java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME);
 
+        ClothingTransformDTO transform = new ClothingTransformDTO(
+                item.getTransformX(),
+                item.getTransformY(),
+                item.getTransformScale(),
+                item.getTransformRotation(),
+                item.getTransformWidth(),
+                item.getTransformHeight()
+        );
+
         return new ClothingResponse(
                 item.getItemId(),
                 item.getName(),
                 item.getDescription(),
                 item.getCategory(),
                 item.getImageUrl(),
+                item.getPersonaType(),
+                transform,
                 item.getActive(),
                 formattedDate
         );

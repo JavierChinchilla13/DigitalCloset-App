@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from './store/useAuthStore';
+import { useClothingStore } from './store/useClothingStore';
 import MainLayout from './layouts/MainLayout';
 
 // Real Pages
@@ -23,6 +24,14 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
 function App() {
   const { isAuthenticated } = useAuthStore();
+  const { fetchItems } = useClothingStore();
+
+  // Load clothing items globally on mount to ensure persistent visibility across all components
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchItems();
+    }
+  }, [isAuthenticated, fetchItems]);
 
   return (
     <Router>

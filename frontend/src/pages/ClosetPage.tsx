@@ -1,15 +1,11 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Plus, 
   Search, 
-  Filter, 
   Star, 
   Loader2, 
   Shirt, 
-  ChevronLeft,
-  LayoutGrid,
-  ListFilter
+  ChevronLeft
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useClothingStore } from '../store/useClothingStore';
@@ -17,7 +13,7 @@ import { ClothingCategory } from '../types';
 import type { ClothingItem } from '../types';
 import ClothingCard from '../components/ClothingCard';
 import SectionWrapper from '../components/SectionWrapper';
-import UploadGarmentModal from '../components/UploadGarmentModal';
+import UploadFlow from '../components/FittingTool/UploadFlow';
 import ClothingDetailsModal from '../components/ClothingDetailsModal';
 import EditClothingModal from '../components/EditClothingModal';
 import DeleteConfirmationModal from '../components/DeleteConfirmationModal';
@@ -182,7 +178,7 @@ const ClosetPage = () => {
       </div>
 
       {/* Modals */}
-      <UploadGarmentModal 
+      <UploadFlow 
         isOpen={isUploadModalOpen} 
         onClose={() => setIsUploadModalOpen(false)} 
       />

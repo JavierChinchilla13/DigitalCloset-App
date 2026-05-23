@@ -19,6 +19,7 @@ export interface PersonaState {
   shoesId?: number | null;
   accessoryId?: number | null;
   jacketId?: number | null;
+  dressId?: number | null;
 }
 
 export interface User {
@@ -43,7 +44,17 @@ export enum ClothingCategory {
   BOTTOM = 'BOTTOM',
   SHOES = 'SHOES',
   ACCESSORY = 'ACCESSORY',
-  JACKET = 'JACKET'
+  JACKET = 'JACKET',
+  DRESS = 'DRESS'
+}
+
+export interface ClothingTransform {
+  x: number;
+  y: number;
+  scale: number;
+  rotation: number;
+  width?: number;
+  height?: number;
 }
 
 export interface ClothingItem {
@@ -52,6 +63,8 @@ export interface ClothingItem {
   description?: string;
   category: ClothingCategory;
   imageUrl: string;
+  personaType: PersonaType;
+  transform: ClothingTransform;
   active?: boolean;
   uploadDate?: string;
   isFavorite?: boolean;

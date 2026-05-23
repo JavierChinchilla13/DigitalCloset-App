@@ -34,6 +34,28 @@ public class ClothingItem {
     @Column(name = "image_url", nullable = false, length = 500)
     private String imageUrl;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "persona_type", nullable = false)
+    private com.javier.closetapp.common.enums.AvatarType personaType;
+
+    @Column(name = "transform_x")
+    private Double transformX = 0.0;
+
+    @Column(name = "transform_y")
+    private Double transformY = 0.0;
+
+    @Column(name = "transform_scale")
+    private Double transformScale = 1.0;
+
+    @Column(name = "transform_rotation")
+    private Double transformRotation = 0.0;
+
+    @Column(name = "transform_width")
+    private Double transformWidth;
+
+    @Column(name = "transform_height")
+    private Double transformHeight;
+
     @Column(name = "is_active")
     private Boolean isActive = true;
 
@@ -97,6 +119,62 @@ public class ClothingItem {
 
     public void setActive(Boolean active) {
         isActive = active;
+    }
+
+    public com.javier.closetapp.common.enums.AvatarType getPersonaType() {
+        return personaType;
+    }
+
+    public void setPersonaType(com.javier.closetapp.common.enums.AvatarType personaType) {
+        this.personaType = personaType;
+    }
+
+    public Double getTransformX() {
+        return transformX;
+    }
+
+    public void setTransformX(Double transformX) {
+        this.transformX = transformX;
+    }
+
+    public Double getTransformY() {
+        return transformY;
+    }
+
+    public void setTransformY(Double transformY) {
+        this.transformY = transformY;
+    }
+
+    public Double getTransformScale() {
+        return transformScale;
+    }
+
+    public void setTransformScale(Double transformScale) {
+        this.transformScale = transformScale;
+    }
+
+    public Double getTransformRotation() {
+        return transformRotation;
+    }
+
+    public void setTransformRotation(Double transformRotation) {
+        this.transformRotation = transformRotation;
+    }
+
+    public Double getTransformWidth() {
+        return transformWidth;
+    }
+
+    public void setTransformWidth(Double transformWidth) {
+        this.transformWidth = transformWidth;
+    }
+
+    public Double getTransformHeight() {
+        return transformHeight;
+    }
+
+    public void setTransformHeight(Double transformHeight) {
+        this.transformHeight = transformHeight;
     }
 
     public LocalDateTime getCreatedAt() {
