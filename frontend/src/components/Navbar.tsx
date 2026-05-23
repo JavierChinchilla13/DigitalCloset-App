@@ -8,57 +8,13 @@ import { User, LogOut, Shirt, LayoutPanelTop, PlayCircle, UserCircle } from 'luc
 const Navbar = () => {
   const { isAuthenticated, user, logout } = useAuthStore();
   const location = useLocation();
-  const navigate = useNavigate();
-  const [activeSection, setActiveSection] = React.useState('persona');
-
-  // Unified scroll listener to track active section for the underline
-  React.useEffect(() => {
-    const handleScroll = () => {
-      if (location.pathname !== '/') return;
-
-      const sections = ['persona', 'closet', 'outfits'];
-      const scrollPosition = window.scrollY + 100; // Offset for navbar
-
-      for (const sectionId of sections) {
-        const element = document.getElementById(sectionId);
-        if (element) {
-          const offsetTop = element.offsetTop;
-          const offsetHeight = element.offsetHeight;
-
-          if (scrollPosition >= offsetTop && scrollPosition < offsetTop + offsetHeight) {
-            setActiveSection(sectionId);
-            break;
-          }
-        }
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    // Trigger once on mount
-    handleScroll();
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [location.pathname]);
 
   const navLinks = [
-    { name: 'Persona', path: '/#persona', id: 'persona', icon: UserCircle, protected: true },
-    { name: 'Closet', path: '/#closet', id: 'closet', icon: Shirt, protected: true },
-    { name: 'Outfits', path: '/#outfits', id: 'outfits', icon: LayoutPanelTop, protected: true },
+    { name: 'Persona', path: '/persona', icon: UserCircle, protected: true },
+    { name: 'Closet', path: '/closet', icon: Shirt, protected: true },
+    { name: 'Outfits', path: '/outfits', icon: LayoutPanelTop, protected: true },
     { name: 'Demo', path: '/demo', icon: PlayCircle, protected: false, publicOnly: true },
   ];
-
-  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, link: any) => {
-    if (link.path.startsWith('/#')) {
-      if (location.pathname === '/') {
-        e.preventDefault();
-        const element = document.getElementById(link.id);
-        if (element) {
-          element.scrollIntoView({ behavior: 'smooth' });
-          window.history.pushState(null, '', `/#${link.id}`);
-          setActiveSection(link.id);
-        }
-      }
-    }
-  };
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 flex justify-center p-6">
@@ -68,7 +24,7 @@ const Navbar = () => {
         transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
         className="glass-panel px-8 py-3 rounded-full flex items-center gap-12 border border-white/10 shadow-2xl"
       >
-        {/* Logo */}
+        {/* Logo - Main Page Entry */}
         <Link to="/" className="text-xl font-bold tracking-tighter text-white hover:text-accent transition-colors">
           DIGITAL<span className="text-accent">CLOSET</span>
         </Link>
@@ -82,15 +38,12 @@ const Navbar = () => {
                 ? !isAuthenticated 
                 : true;
 
-            const isActive = location.pathname === '/' 
-              ? activeSection === link.id
-              : location.pathname === link.path;
+            const isActive = location.pathname === link.path;
 
             return showLink && (
               <Link
                 key={link.path}
                 to={link.path}
-                onClick={(e) => handleNavClick(e, link)}
                 className={cn(
                   "text-sm font-medium transition-all relative py-1",
                   isActive ? "text-accent" : "text-text-secondary hover:text-text-primary"
