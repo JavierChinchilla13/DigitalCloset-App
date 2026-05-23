@@ -9,15 +9,10 @@ const DashboardPage = () => {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="pb-20"
+      className="pb-20 bg-background-main"
     >
-      {/* Centered Avatar Section (Centerpiece) */}
       <AvatarSection />
-
-      {/* Horizontal Scroll Closet Section */}
       <ClosetSection />
-
-      {/* Grid Outfits Section */}
       <OutfitsSection />
     </motion.div>
   );
