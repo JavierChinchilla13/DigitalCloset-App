@@ -10,7 +10,8 @@ import {
   ShoppingBag,
   Layers,
   Sparkles,
-  AlertCircle
+  AlertCircle,
+  X
 } from 'lucide-react';
 import { ClothingCategory, PersonaType, type ClothingTransform } from '../../types';
 import { useClothingStore } from '../../store/useClothingStore';
@@ -48,6 +49,20 @@ const UploadFlow: React.FC<UploadFlowProps> = ({ isOpen, onClose }) => {
   const [error, setError] = useState<string | null>(null);
 
   const { addItem } = useClothingStore();
+
+  const resetFlow = () => {
+    setStep('UPLOAD');
+    setFile(null);
+    setCategory(ClothingCategory.TOP);
+    setPersonaType(PersonaType.MALE);
+    setProcessedImageUrl(null);
+    setError(null);
+  };
+
+  const handleClose = () => {
+    resetFlow();
+    onClose();
+  };
 
   const handleFileSelect = (selectedFile: File) => {
     setFile(selectedFile);
@@ -89,21 +104,11 @@ const UploadFlow: React.FC<UploadFlowProps> = ({ isOpen, onClose }) => {
         imageUrl: processedImageUrl,
         transform: data.transform
       });
-      onClose();
-      resetFlow();
+      handleClose();
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to save garment.';
       setError(message);
     }
-  };
-
-  const resetFlow = () => {
-    setStep('UPLOAD');
-    setFile(null);
-    setCategory(ClothingCategory.TOP);
-    setPersonaType(PersonaType.MALE);
-    setProcessedImageUrl(null);
-    setError(null);
   };
 
   if (!isOpen) return null;
@@ -114,7 +119,7 @@ const UploadFlow: React.FC<UploadFlowProps> = ({ isOpen, onClose }) => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        onClick={onClose}
+        onClick={handleClose}
         className="absolute inset-0 bg-background-main/90 backdrop-blur-2xl"
       />
 
@@ -126,6 +131,14 @@ const UploadFlow: React.FC<UploadFlowProps> = ({ isOpen, onClose }) => {
         }`}
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Close Button */}
+        <button 
+          onClick={handleClose}
+          className="absolute top-8 right-8 p-3 hover:bg-white/5 rounded-full transition-colors text-text-secondary hover:text-white z-50"
+        >
+          <X size={20} />
+        </button>
+
         {/* Progress Bar */}
         <div className="absolute top-0 left-0 right-0 h-1 bg-white/5 overflow-hidden">
           <motion.div 
@@ -192,14 +205,16 @@ const UploadFlow: React.FC<UploadFlowProps> = ({ isOpen, onClose }) => {
                       <Layers size={14} className="text-accent" />
                       <label className="text-[10px] font-black tracking-[0.3em] text-accent uppercase">Garment Category</label>
                     </div>
-                    <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
-                      {Object.values(ClothingCategory).map((cat) => {
+                    <div className="flex flex-wrap justify-center gap-3">
+                      {Object.values(ClothingCategory)
+                        .filter(cat => cat !== ClothingCategory.ACCESSORY)
+                        .map((cat) => {
                         const Icon = CATEGORY_ICONS[cat];
                         return (
                           <button
                             key={cat}
                             onClick={() => setCategory(cat)}
-                            className={`flex flex-col items-center gap-3 p-4 rounded-2xl border transition-all ${
+                            className={`flex flex-col items-center gap-3 p-4 w-24 rounded-2xl border transition-all ${
                               category === cat 
                                 ? 'bg-accent/10 border-accent text-white' 
                                 : 'bg-white/[0.02] border-white/5 text-text-secondary hover:border-white/20'

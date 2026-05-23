@@ -13,9 +13,7 @@ import SignupPage from './pages/SignupPage';
 import OutfitBuilderPage from './pages/OutfitBuilderPage';
 import SavedOutfitsPage from './pages/SavedOutfitsPage';
 import ClosetPage from './pages/ClosetPage';
-
-// Placeholders for other routes
-const PersonaPage = () => <div className="text-center py-40"><h1 className="text-4xl font-light uppercase tracking-tighter text-white">Persona Studio</h1><p className="text-text-secondary mt-4">Advanced customization coming soon.</p></div>;
+import PersonaPage from './pages/PersonaPage';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated } = useAuthStore();

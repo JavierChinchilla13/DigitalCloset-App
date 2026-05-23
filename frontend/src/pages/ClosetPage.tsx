@@ -64,7 +64,7 @@ const ClosetPage = () => {
     });
   }, [items, searchQuery, activeCategory, showOnlyFavorites, persona.type]);
 
-  const categories = ['ALL', ...Object.values(ClothingCategory)];
+  const categories = ['ALL', ...Object.values(ClothingCategory).filter(cat => cat !== ClothingCategory.ACCESSORY)];
 
   return (
     <div className="min-h-screen bg-background-main pt-24 pb-20">
@@ -109,7 +109,7 @@ const ClosetPage = () => {
             />
           </div>
 
-          <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2 lg:pb-0">
+          <div className="flex justify-center gap-2 overflow-x-auto no-scrollbar pb-2 lg:pb-0">
             {categories.map((cat) => (
               <button
                 key={cat}

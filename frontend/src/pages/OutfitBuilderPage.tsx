@@ -151,7 +151,9 @@ const OutfitBuilderPage = () => {
       <div className="flex-grow flex overflow-hidden">
         {/* Left Panel: Category Selector */}
         <aside className="w-20 border-r border-white/5 flex flex-col items-center py-8 gap-8 bg-black/20">
-          {Object.values(ClothingCategory).map((cat) => (
+          {Object.values(ClothingCategory)
+            .filter(cat => cat !== ClothingCategory.ACCESSORY)
+            .map((cat) => (
             <button
               key={cat}
               onClick={() => setActiveCategory(cat)}

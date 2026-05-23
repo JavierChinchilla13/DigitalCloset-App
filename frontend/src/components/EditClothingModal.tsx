@@ -126,8 +126,10 @@ const EditClothingModal: React.FC<EditClothingModalProps> = ({ item, isOpen, onC
                   <Shirt size={12} className="text-accent" />
                   <span>Category</span>
                 </div>
-                <div className="grid grid-cols-5 gap-3">
-                  {Object.values(ClothingCategory).map((cat) => {
+                <div className="flex flex-wrap justify-center gap-3">
+                  {Object.values(ClothingCategory)
+                    .filter(cat => cat !== ClothingCategory.ACCESSORY)
+                    .map((cat) => {
                     const Icon = CATEGORY_ICONS[cat];
                     const isSelected = category === cat;
                     return (
@@ -137,7 +139,7 @@ const EditClothingModal: React.FC<EditClothingModalProps> = ({ item, isOpen, onC
                         whileTap={{ scale: 0.95 }}
                         onClick={() => setCategory(cat)}
                         className={`
-                          flex flex-col items-center justify-center gap-3 p-4 rounded-2xl border transition-all
+                          flex flex-col items-center justify-center gap-3 p-4 w-24 rounded-2xl border transition-all
                           ${isSelected 
                             ? 'bg-accent/10 border-accent text-accent shadow-lg shadow-accent/20' 
                             : 'bg-white/5 border-white/5 text-text-secondary hover:border-white/10 hover:bg-white/10'
