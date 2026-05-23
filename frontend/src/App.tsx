@@ -11,9 +11,9 @@ import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import OutfitBuilderPage from './pages/OutfitBuilderPage';
 import SavedOutfitsPage from './pages/SavedOutfitsPage';
+import ClosetPage from './pages/ClosetPage';
 
 // Placeholders for other routes
-const ClosetPage = () => <div className="text-center py-40"><h1 className="text-4xl font-light uppercase tracking-tighter text-white">My Closet</h1><p className="text-text-secondary mt-4">Full management coming soon.</p></div>;
 const PersonaPage = () => <div className="text-center py-40"><h1 className="text-4xl font-light uppercase tracking-tighter text-white">Persona Studio</h1><p className="text-text-secondary mt-4">Advanced customization coming soon.</p></div>;
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {

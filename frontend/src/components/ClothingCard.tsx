@@ -1,23 +1,27 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Shirt, Info, Edit2, Trash2 } from 'lucide-react';
+import { Shirt, Info, Edit2, Trash2, Star } from 'lucide-react';
 import type { ClothingItem } from '../types';
 import { usePersonaStore } from '../store/usePersonaStore';
+import { useClothingStore } from '../store/useClothingStore';
 
 interface ClothingCardProps {
   item: ClothingItem;
   onViewDetails: (item: ClothingItem) => void;
   onEdit: (item: ClothingItem) => void;
   onDelete: (item: ClothingItem) => void;
+  showManagement?: boolean;
 }
 
 const ClothingCard: React.FC<ClothingCardProps> = ({ 
   item, 
   onViewDetails,
   onEdit,
-  onDelete
+  onDelete,
+  showManagement = false
 }) => {
   const { setEquippedItem, persona } = usePersonaStore();
+  const { toggleFavorite } = useClothingStore();
   const isEquipped = Object.values(persona).includes(item.itemId);
 
   const handleEquip = (e: React.MouseEvent) => {
@@ -27,6 +31,11 @@ const ClothingCard: React.FC<ClothingCardProps> = ({
     } else {
       setEquippedItem(item.category, item.itemId);
     }
+  };
+
+  const handleFavorite = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    toggleFavorite(item.itemId);
   };
 
   return (
@@ -48,6 +57,20 @@ const ClothingCard: React.FC<ClothingCardProps> = ({
           className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
         />
         
+        {/* Favorite Star (Always visible if favorite, otherwise on hover) */}
+        <button
+          onClick={handleFavorite}
+          className={`
+            absolute top-2 right-2 p-1.5 rounded-full backdrop-blur-md transition-all z-10
+            ${item.isFavorite 
+              ? 'bg-yellow-500 text-white scale-100 opacity-100' 
+              : 'bg-black/40 text-white/40 opacity-0 group-hover:opacity-100 hover:text-yellow-500'
+            }
+          `}
+        >
+          <Star size={10} fill={item.isFavorite ? "currentColor" : "none"} strokeWidth={3} />
+        </button>
+
         {/* Overlay Actions */}
         <div className="absolute inset-0 bg-background-main/60 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col items-center justify-center gap-3">
           <div className="flex gap-2">
@@ -61,26 +84,31 @@ const ClothingCard: React.FC<ClothingCardProps> = ({
             >
               <Info size={14} />
             </button>
-            <button 
-              onClick={(e) => {
-                e.stopPropagation();
-                onEdit(item);
-              }}
-              className="p-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors border border-white/10"
-              title="Edit"
-            >
-              <Edit2 size={14} />
-            </button>
-            <button 
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete(item);
-              }}
-              className="p-2 bg-rose-500/20 hover:bg-rose-500/40 text-rose-400 hover:text-white rounded-lg transition-colors border border-rose-500/20"
-              title="Delete"
-            >
-              <Trash2 size={14} />
-            </button>
+            
+            {showManagement && (
+              <>
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit(item);
+                  }}
+                  className="p-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors border border-white/10"
+                  title="Edit"
+                >
+                  <Edit2 size={14} />
+                </button>
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete(item);
+                  }}
+                  className="p-2 bg-rose-500/20 hover:bg-rose-500/40 text-rose-400 hover:text-white rounded-lg transition-colors border border-rose-500/20"
+                  title="Delete"
+                >
+                  <Trash2 size={14} />
+                </button>
+              </>
+            )}
           </div>
 
           <div className={`

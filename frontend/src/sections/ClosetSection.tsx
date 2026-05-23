@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { ChevronRight, Loader2, Plus } from 'lucide-react';
+import { ChevronRight, Loader2, Plus, LayoutPanelTop } from 'lucide-react';
 import { ClothingCategory } from '../types';
 import type { ClothingItem } from '../types';
 import SectionWrapper from '../components/SectionWrapper';
 import { useClothingStore } from '../store/useClothingStore';
+import { useNavigate } from 'react-router-dom';
 import UploadGarmentModal from '../components/UploadGarmentModal';
 import ClothingCard from '../components/ClothingCard';
 import ClothingDetailsModal from '../components/ClothingDetailsModal';
@@ -13,6 +14,7 @@ import DeleteConfirmationModal from '../components/DeleteConfirmationModal';
 
 const ClosetSection = () => {
   const { items, isLoading, fetchItems } = useClothingStore();
+  const navigate = useNavigate();
   
   // Modal States
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
@@ -62,10 +64,18 @@ const ClosetSection = () => {
           <h2 className="text-4xl font-light tracking-tighter mb-2 uppercase">Your Closet</h2>
           <p className="text-text-secondary text-[10px] uppercase tracking-widest opacity-40">Digital Inventory // Categorized Selection</p>
         </div>
-        <div className="flex gap-4">
+        <div className="flex flex-col gap-3">
+          <button 
+            onClick={() => navigate('/closet')}
+            className="flex items-center justify-center gap-2 px-5 py-2.5 bg-white/5 hover:bg-white/10 text-white rounded-lg transition-all border border-white/5 font-black text-[10px] uppercase tracking-widest"
+          >
+            <LayoutPanelTop size={14} className="text-accent" />
+            <span>View Full Closet</span>
+          </button>
+          
           <button 
             onClick={() => setIsUploadModalOpen(true)}
-            className="flex items-center gap-2 bg-accent hover:bg-accent-hover text-white px-5 py-2.5 rounded-lg font-bold transition-all shadow-lg shadow-accent/20 text-[10px] uppercase tracking-widest"
+            className="flex items-center justify-center gap-2 bg-accent hover:bg-accent-hover text-white px-5 py-2.5 rounded-lg font-black transition-all shadow-lg shadow-accent/20 text-[10px] uppercase tracking-widest"
           >
             <Plus size={14} />
             <span>Add Garment</span>

@@ -54,6 +54,7 @@ export interface ClothingItem {
   imageUrl: string;
   active?: boolean;
   uploadDate?: string;
+  isFavorite?: boolean;
 }
 
 export interface OutfitItem {
