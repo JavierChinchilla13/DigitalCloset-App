@@ -30,6 +30,11 @@ const ClothingCard: React.FC<ClothingCardProps> = ({
       setEquippedItem(item.category, null);
     } else {
       setEquippedItem(item.category, item.itemId);
+      // Auto-scroll to persona section to see the change
+      const personaEl = document.getElementById('persona');
+      if (personaEl) {
+        personaEl.scrollIntoView({ behavior: 'smooth' });
+      }
     }
   };
 

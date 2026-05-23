@@ -6,6 +6,7 @@ import { useLocalOutfitStore } from '../store/useLocalOutfitStore';
 import { usePersonaStore } from '../store/usePersonaStore';
 import { useNavigate } from 'react-router-dom';
 import { PersonaType } from '../types';
+import PersonaRenderer from '../components/PersonaRenderer';
 
 const OutfitsSection = () => {
   const { outfits, _hasHydrated, deleteOutfit } = useLocalOutfitStore();
@@ -20,6 +21,11 @@ const OutfitsSection = () => {
 
   const handleApply = (outfit: any) => {
     updatePersona(outfit.items);
+    // Auto-scroll to persona section to see the full look
+    const personaEl = document.getElementById('persona');
+    if (personaEl) {
+      personaEl.scrollIntoView({ behavior: 'smooth' });
+    }
   };
 
   const formatDate = (dateStr: string) => {
@@ -73,11 +79,15 @@ const OutfitsSection = () => {
               className="flex-shrink-0 w-64 md:w-72 group"
             >
               <div className="relative aspect-[3/4] rounded-2xl overflow-hidden mb-4 border border-white/5 bg-background-secondary shadow-xl">
-                <img 
-                  src={outfit.preview} 
-                  alt={outfit.name} 
-                  className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110"
-                />
+                <div className="w-full h-full scale-[0.6] origin-center translate-y-[-5%] transition-transform duration-700 group-hover:scale-[0.65]">
+                  <PersonaRenderer 
+                    persona={{
+                      type: outfit.personaType || PersonaType.MALE,
+                      ...outfit.items
+                    }} 
+                    className="h-full" 
+                  />
+                </div>
                 
                 {/* Overlay Actions */}
                 <div className="absolute inset-0 bg-background-main/60 opacity-0 group-hover:opacity-100 transition-all duration-500 flex flex-col justify-between p-6 backdrop-blur-[2px]">

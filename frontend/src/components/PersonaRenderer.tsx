@@ -1,14 +1,24 @@
 import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
-import { PersonaType } from '../types';
+import { PersonaType, type PersonaState } from '../types';
 import PersonaLayer from './PersonaLayer';
 import { useClothingStore } from '../store/useClothingStore';
 import { usePersonaStore } from '../store/usePersonaStore';
 
-const PersonaRenderer: React.FC = () => {
+interface PersonaRendererProps {
+  persona?: PersonaState;
+  className?: string;
+}
+
+const PersonaRenderer: React.FC<PersonaRendererProps> = ({ 
+  persona: customPersona,
+  className = "h-[600px] md:h-[800px]"
+}) => {
   const { items, isLoading, fetchItems, _hasHydrated: closetHydrated } = useClothingStore();
-  const { persona, _hasHydrated: personaHydrated } = usePersonaStore();
+  const { persona: storePersona, _hasHydrated: personaHydrated } = usePersonaStore();
+
+  const persona = customPersona || storePersona;
 
   const isMale = persona.type === PersonaType.MALE;
   const baseImage = isMale ? '/personas/male-base.png' : '/personas/female-base.png';
@@ -21,7 +31,7 @@ const PersonaRenderer: React.FC = () => {
 
   if (!personaHydrated || !closetHydrated) {
     return (
-      <div className="flex items-center justify-center w-full h-full min-h-[600px]">
+      <div className={`flex items-center justify-center w-full ${className}`}>
         <Loader2 className="animate-spin text-accent/20" size={32} />
       </div>
     );
@@ -52,7 +62,7 @@ const PersonaRenderer: React.FC = () => {
   ];
 
   return (
-    <div className="relative w-full h-[600px] md:h-[800px] flex items-center justify-center overflow-visible">
+    <div className={`relative w-full flex items-center justify-center overflow-visible ${className}`}>
       {/* Clean Minimal shadow for depth */}
       <div className="absolute bottom-10 left-1/2 -translate-x-1/2 w-48 h-4 bg-black/40 blur-2xl rounded-full scale-x-150 z-0" />
 

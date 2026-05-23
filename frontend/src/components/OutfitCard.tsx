@@ -5,6 +5,8 @@ import type { LocalOutfit } from '../store/useLocalOutfitStore';
 import { useLocalOutfitStore } from '../store/useLocalOutfitStore';
 import { usePersonaStore } from '../store/usePersonaStore';
 import { useNavigate } from 'react-router-dom';
+import PersonaRenderer from './PersonaRenderer';
+import { PersonaType } from '../types';
 
 interface OutfitCardProps {
   outfit: LocalOutfit;
@@ -18,7 +20,11 @@ const OutfitCard: React.FC<OutfitCardProps> = ({ outfit }) => {
 
   const handleApply = () => {
     updatePersona(outfit.items);
-    // Potentially navigate back to dashboard or show a toast
+    // Auto-scroll to persona section to see the full look
+    const personaEl = document.getElementById('persona');
+    if (personaEl) {
+      personaEl.scrollIntoView({ behavior: 'smooth' });
+    }
   };
 
   const formatDate = (dateStr: string) => {
@@ -27,6 +33,11 @@ const OutfitCard: React.FC<OutfitCardProps> = ({ outfit }) => {
       day: 'numeric',
       year: 'numeric'
     });
+  };
+
+  const outfitPersona = {
+    type: outfit.personaType || PersonaType.MALE,
+    ...outfit.items
   };
 
   return (
@@ -39,11 +50,9 @@ const OutfitCard: React.FC<OutfitCardProps> = ({ outfit }) => {
       className="group relative"
     >
       <div className="relative aspect-[3/4] rounded-[2rem] overflow-hidden border border-white/5 bg-background-secondary shadow-xl transition-all group-hover:shadow-accent/5">
-        <img 
-          src={outfit.preview} 
-          alt={outfit.name} 
-          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-        />
+        <div className="w-full h-full scale-[0.6] origin-center translate-y-[-5%] transition-transform duration-700 group-hover:scale-[0.65]">
+           <PersonaRenderer persona={outfitPersona} className="h-full" />
+        </div>
         
         {/* Actions Overlay */}
         <div className="absolute inset-0 bg-background-main/60 opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col justify-between p-6 backdrop-blur-[2px]">

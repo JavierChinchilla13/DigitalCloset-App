@@ -189,34 +189,36 @@ const OutfitBuilderPage = () => {
               </div>
             ) : (
               <div className="grid grid-cols-2 gap-4">
-                {closetItems.filter(i => i.category === activeCategory).map((item) => {
-                  const active = isEquipped(item.itemId);
-                  return (
-                    <motion.div
-                      key={item.itemId}
-                      whileHover={{ y: -4 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => toggleItem(item)}
-                      className={`
-                        relative aspect-[3/4] rounded-2xl overflow-hidden cursor-pointer border transition-all duration-300
-                        ${active ? 'border-accent ring-2 ring-accent/20' : 'border-white/5 hover:border-white/20'}
-                      `}
-                    >
-                      <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
-                      <div className={`
-                        absolute inset-0 bg-accent/20 flex items-center justify-center transition-opacity
-                        ${active ? 'opacity-100' : 'opacity-0'}
-                      `}>
-                        <div className="bg-white text-accent p-2 rounded-full shadow-xl">
-                          <Plus size={16} className="rotate-45" />
+                {closetItems
+                  .filter(i => i.category === activeCategory && (!i.personaType || i.personaType === persona.type))
+                  .map((item) => {
+                    const active = isEquipped(item.itemId);
+                    return (
+                      <motion.div
+                        key={item.itemId}
+                        whileHover={{ y: -4 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => toggleItem(item)}
+                        className={`
+                          relative aspect-[3/4] rounded-2xl overflow-hidden cursor-pointer border transition-all duration-300
+                          ${active ? 'border-accent ring-2 ring-accent/20' : 'border-white/5 hover:border-white/20'}
+                        `}
+                      >
+                        <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
+                        <div className={`
+                          absolute inset-0 bg-accent/20 flex items-center justify-center transition-opacity
+                          ${active ? 'opacity-100' : 'opacity-0'}
+                        `}>
+                          <div className="bg-white text-accent p-2 rounded-full shadow-xl">
+                            <Plus size={16} className="rotate-45" />
+                          </div>
                         </div>
-                      </div>
-                      <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent">
-                        <p className="text-[8px] font-bold text-white line-clamp-1 uppercase tracking-wider">{item.name}</p>
-                      </div>
-                    </motion.div>
-                  );
-                })}
+                        <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/80 to-transparent">
+                          <p className="text-[8px] font-bold text-white line-clamp-1 uppercase tracking-wider">{item.name}</p>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
               </div>
             )}
           </div>
