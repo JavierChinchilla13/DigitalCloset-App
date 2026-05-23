@@ -17,6 +17,8 @@ export interface LocalOutfit {
 
 interface LocalOutfitStore {
   outfits: LocalOutfit[];
+  _hasHydrated: boolean;
+  setHasHydrated: (state: boolean) => void;
   saveOutfit: (outfit: Omit<LocalOutfit, 'id' | 'createdAt'>) => void;
   updateOutfit: (id: string, updates: Partial<LocalOutfit>) => void;
   deleteOutfit: (id: string) => void;
@@ -27,6 +29,8 @@ export const useLocalOutfitStore = create<LocalOutfitStore>()(
   persist(
     (set) => ({
       outfits: [],
+      _hasHydrated: false,
+      setHasHydrated: (state) => set({ _hasHydrated: state }),
       saveOutfit: (outfit) => set((state) => ({
         outfits: [
           {
@@ -61,6 +65,9 @@ export const useLocalOutfitStore = create<LocalOutfitStore>()(
     }),
     {
       name: 'saved-outfits-storage',
+      onRehydrateStorage: (state) => {
+        return () => state?.setHasHydrated(true);
+      }
     }
   )
 );

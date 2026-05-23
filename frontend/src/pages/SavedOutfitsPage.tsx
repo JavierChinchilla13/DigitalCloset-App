@@ -1,14 +1,22 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Sparkles, Shirt, LayoutGrid } from 'lucide-react';
+import { Plus, Sparkles, Shirt, LayoutGrid, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useLocalOutfitStore } from '../store/useLocalOutfitStore';
 import OutfitCard from '../components/OutfitCard';
 import SectionWrapper from '../components/SectionWrapper';
 
 const SavedOutfitsPage = () => {
-  const { outfits } = useLocalOutfitStore();
+  const { outfits, _hasHydrated } = useLocalOutfitStore();
   const navigate = useNavigate();
+
+  if (!_hasHydrated) {
+    return (
+      <div className="min-h-screen bg-background-main flex items-center justify-center">
+        <Loader2 className="animate-spin text-accent" size={40} />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background-main pt-24 pb-20">

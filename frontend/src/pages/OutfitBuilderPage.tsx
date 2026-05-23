@@ -5,10 +5,8 @@ import {
   Save, 
   Loader2, 
   Sparkles, 
-  Trash2, 
   RotateCcw,
-  Plus,
-  ArrowRight
+  Plus
 } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useClothingStore } from '../store/useClothingStore';
@@ -22,13 +20,15 @@ const OutfitBuilderPage = () => {
   const navigate = useNavigate();
   const { items: closetItems, fetchItems, isLoading: loadingCloset } = useClothingStore();
   const { persona, updatePersona, setEquippedItem } = usePersonaStore();
-  const { outfits, saveOutfit, updateOutfit } = useLocalOutfitStore();
+  const { outfits, saveOutfit, updateOutfit, _hasHydrated } = useLocalOutfitStore();
 
   const [outfitName, setOutfitName] = useState('New Style');
   const [activeCategory, setActiveCategory] = useState<ClothingCategory>(ClothingCategory.TOP);
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
+    if (!_hasHydrated) return;
+    
     fetchItems();
     
     // If editing, load the outfit
@@ -39,13 +39,12 @@ const OutfitBuilderPage = () => {
         updatePersona(existing.items);
       }
     }
-  }, [id, fetchItems, outfits, updatePersona]);
+  }, [id, fetchItems, outfits, updatePersona, _hasHydrated]);
 
   const handleSave = async () => {
     setIsSaving(true);
     
     // In a real app, we'd use html2canvas or similar to capture the PersonaRenderer
-    // For this prototype, we'll use a placeholder or the first item's image
     const previewImage = closetItems.find(i => i.itemId === persona.topId)?.imageUrl || 
                          closetItems.find(i => i.itemId === persona.bottomId)?.imageUrl ||
                          "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=600&h=800&fit=crop";
@@ -98,6 +97,14 @@ const OutfitBuilderPage = () => {
       setEquippedItem(item.category, item.itemId);
     }
   };
+
+  if (!_hasHydrated) {
+    return (
+      <div className="min-h-screen bg-background-main flex items-center justify-center">
+        <Loader2 className="animate-spin text-accent" size={40} />
+      </div>
+    );
+  }
 
   return (
     <div className="h-screen bg-background-main flex flex-col overflow-hidden pt-16">
