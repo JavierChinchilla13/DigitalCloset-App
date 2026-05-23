@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuthStore } from '../store/useAuthStore';
 import { cn } from '../utils/cn';
@@ -8,13 +8,34 @@ import { User, LogOut, Shirt, LayoutPanelTop, PlayCircle, UserCircle } from 'luc
 const Navbar = () => {
   const { isAuthenticated, user, logout } = useAuthStore();
   const location = useLocation();
+  const navigate = useNavigate();
 
   const navLinks = [
-    { name: 'Persona', path: '/persona', icon: UserCircle, protected: true },
-    { name: 'Closet', path: '/closet', icon: Shirt, protected: true },
-    { name: 'Outfits', path: '/outfits', icon: LayoutPanelTop, protected: true },
+    { name: 'Persona', path: '/#persona', icon: UserCircle, protected: true },
+    { name: 'Closet', path: '/#closet', icon: Shirt, protected: true },
+    { name: 'Outfits', path: '/#outfits', icon: LayoutPanelTop, protected: true },
     { name: 'Demo', path: '/demo', icon: PlayCircle, protected: false, publicOnly: true },
   ];
+
+  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, path: string) => {
+    // If it's an anchor on the current page
+    if (path.startsWith('/#')) {
+      const id = path.replace('/#', '');
+      
+      // If we are already on the dashboard, just scroll
+      if (location.pathname === '/') {
+        e.preventDefault();
+        const element = document.getElementById(id);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth' });
+          // Update URL hash without reload
+          window.history.pushState(null, '', `/#${id}`);
+        }
+      } else {
+        // If we are on another page, let the default Link behavior take us to / and the Dashboard's useEffect will handle the scroll
+      }
+    }
+  };
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 flex justify-center p-6">
@@ -32,27 +53,28 @@ const Navbar = () => {
         {/* Center Links */}
         <div className="hidden md:flex items-center gap-8">
           {navLinks.map((link) => {
-            // Visibility logic:
-            // 1. If protected, must be authenticated
-            // 2. If publicOnly, must NOT be authenticated
-            // 3. Otherwise show to everyone
             const showLink = link.protected 
               ? isAuthenticated 
               : link.publicOnly 
                 ? !isAuthenticated 
                 : true;
 
+            const isActive = location.pathname === '/' 
+              ? (location.hash === link.path.replace('/', '') || (link.name === 'Persona' && !location.hash))
+              : location.pathname === link.path;
+
             return showLink && (
               <Link
                 key={link.path}
                 to={link.path}
+                onClick={(e) => handleNavClick(e, link.path)}
                 className={cn(
                   "text-sm font-medium transition-all relative py-1",
-                  location.pathname === link.path ? "text-accent" : "text-text-secondary hover:text-text-primary"
+                  isActive ? "text-accent" : "text-text-secondary hover:text-text-primary"
                 )}
               >
                 {link.name}
-                {location.pathname === link.path && (
+                {isActive && (
                   <motion.div 
                     layoutId="nav-underline"
                     className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent"
