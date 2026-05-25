@@ -1,6 +1,7 @@
 package com.javier.closetapp.clothing.dto;
 
 import com.javier.closetapp.common.enums.ClothingCategory;
+import com.javier.closetapp.common.enums.AvatarType;
 
 public class ClothingRequest {
     private String name;
@@ -10,7 +11,7 @@ public class ClothingRequest {
     private String side;
     private Boolean isModular;
     private String modularData;
-    private com.javier.closetapp.common.enums.AvatarType personaType;
+    private AvatarType personaType;
     private ClothingTransformDTO transform;
 
     public ClothingRequest() {}
@@ -21,8 +22,8 @@ public class ClothingRequest {
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
 
-    public com.javier.closetapp.common.enums.ClothingCategory getCategory() { return category; }
-    public void setCategory(com.javier.closetapp.common.enums.ClothingCategory category) { this.category = category; }
+    public ClothingCategory getCategory() { return category; }
+    public void setCategory(ClothingCategory category) { this.category = category; }
 
     public String getImageUrl() { return imageUrl; }
     public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
@@ -36,8 +37,8 @@ public class ClothingRequest {
     public String getModularData() { return modularData; }
     public void setModularData(String modularData) { this.modularData = modularData; }
 
-    public com.javier.closetapp.common.enums.AvatarType getPersonaType() { return personaType; }
-    public void setPersonaType(com.javier.closetapp.common.enums.AvatarType personaType) { this.personaType = personaType; }
+    public AvatarType getPersonaType() { return personaType; }
+    public void setPersonaType(AvatarType personaType) { this.personaType = personaType; }
 
     public ClothingTransformDTO getTransform() { return transform; }
     public void setTransform(ClothingTransformDTO transform) { this.transform = transform; }

@@ -2,6 +2,7 @@ package com.javier.closetapp.clothing.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.javier.closetapp.common.enums.ClothingCategory;
+import com.javier.closetapp.common.enums.AvatarType;
 
 public class ClothingResponse {
     private Long itemId;
@@ -12,7 +13,7 @@ public class ClothingResponse {
     private String side;
     private Boolean isModular;
     private String modularData;
-    private com.javier.closetapp.common.enums.AvatarType personaType;
+    private AvatarType personaType;
     private ClothingTransformDTO transform;
     private Boolean active;
     private String uploadDate;
@@ -22,7 +23,7 @@ public class ClothingResponse {
     public ClothingResponse(Long itemId, String name, String description, 
                             ClothingCategory category, String imageUrl, String side,
                             Boolean isModular, String modularData,
-                            com.javier.closetapp.common.enums.AvatarType personaType,
+                            AvatarType personaType,
                             ClothingTransformDTO transform,
                             Boolean active, String uploadDate) {
         this.itemId = itemId;
@@ -63,8 +64,8 @@ public class ClothingResponse {
     public String getModularData() { return modularData; }
     public void setModularData(String modularData) { this.modularData = modularData; }
 
-    public com.javier.closetapp.common.enums.AvatarType getPersonaType() { return personaType; }
-    public void setPersonaType(com.javier.closetapp.common.enums.AvatarType personaType) { this.personaType = personaType; }
+    public AvatarType getPersonaType() { return personaType; }
+    public void setPersonaType(AvatarType personaType) { this.personaType = personaType; }
 
     public ClothingTransformDTO getTransform() { return transform; }
     public void setTransform(ClothingTransformDTO transform) { this.transform = transform; }

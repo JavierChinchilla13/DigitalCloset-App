@@ -221,12 +221,21 @@ const UploadFlow: React.FC<UploadFlowProps> = ({ isOpen, onClose }) => {
     previewUrl: string;
   }) => {
     try {
+      setStep('PROCESSING');
+      setProcessingStatus('Finalizing modular asset...');
+      
+      // Upload the composite preview to Cloudinary
+      // Convert DataURL to Blob
+      const response = await fetch(data.previewUrl);
+      const blob = await response.blob();
+      const uploadedPreviewUrl = await cloudinaryService.uploadImage(blob);
+
       await addItem({
         name: data.name,
         description: data.description,
         category: ClothingCategory.JACKET,
         personaType,
-        imageUrl: data.previewUrl,
+        imageUrl: uploadedPreviewUrl,
         isModular: true,
         modularData: data.modularData,
         transform: { x: 375, y: 300, scaleX: 1, scaleY: 1, rotation: 0, width: 450, height: 450 }

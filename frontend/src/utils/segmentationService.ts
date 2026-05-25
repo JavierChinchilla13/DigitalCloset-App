@@ -49,60 +49,64 @@ class SegmentationService {
       'Upper-clothes': 'torso',
       'Coat': 'torso',
       'Jumpsuits': 'torso',
+      'Dress': 'torso', // Long coats often labeled as dress
       'Left-arm': 'leftSleeve',
       'Right-arm': 'rightSleeve',
       'Necklace': 'collar', 
       'Scarf': 'collar',
+      'Gloves': 'leftSleeve', // Sometimes sleeves or cuffs
     };
 
-    // Load original image into canvas to apply masks
     const originalImg = await this.loadImage(originalSource);
-    const canvas = document.createElement('canvas');
-    canvas.width = originalImg.width;
-    canvas.height = originalImg.height;
-    const ctx = canvas.getContext('2d')!;
-
+    
+    // Group segments by canonical label
+    const groupedSegments = new Map<string, any[]>();
     for (const segment of output) {
       const canonicalLabel = labelMap[segment.label];
-      if (!canonicalLabel) continue;
+      if (canonicalLabel) {
+        if (!groupedSegments.has(canonicalLabel)) groupedSegments.set(canonicalLabel, []);
+        groupedSegments.get(canonicalLabel)!.push(segment);
+      }
+    }
 
-      // Apply mask to original image
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      
-      // Draw the mask as a clipping path
-      const maskCanvas = document.createElement('canvas');
-      maskCanvas.width = segment.mask.width;
-      maskCanvas.height = segment.mask.height;
-      const maskCtx = maskCanvas.getContext('2d')!;
-      
-      // Convert single-channel mask data (L) to 4-channel RGBA data
-      const maskData = segment.mask.data;
-      const rgbaData = new Uint8ClampedArray(maskData.length * 4);
-      
-      for (let i = 0; i < maskData.length; ++i) {
-        const value = maskData[i];
-        rgbaData[i * 4] = 0;       // R
-        rgbaData[i * 4 + 1] = 0;   // G
-        rgbaData[i * 4 + 2] = 0;   // B
-        rgbaData[i * 4 + 3] = value; // A (using mask value as alpha)
+    for (const [label, segments] of groupedSegments.entries()) {
+      const canvas = document.createElement('canvas');
+      canvas.width = originalImg.width;
+      canvas.height = originalImg.height;
+      const ctx = canvas.getContext('2d')!;
+      ctx.imageSmoothingEnabled = false; // Prevent fuzzy mask edges
+
+      // Draw all masks for this label group
+      for (const segment of segments) {
+        const maskCanvas = document.createElement('canvas');
+        maskCanvas.width = segment.mask.width;
+        maskCanvas.height = segment.mask.height;
+        const maskCtx = maskCanvas.getContext('2d')!;
+        
+        const maskData = segment.mask.data;
+        const rgbaData = new Uint8ClampedArray(maskData.length * 4);
+        
+        for (let i = 0; i < maskData.length; ++i) {
+          const value = maskData[i];
+          rgbaData[i * 4] = 0;
+          rgbaData[i * 4 + 1] = 0;
+          rgbaData[i * 4 + 2] = 0;
+          rgbaData[i * 4 + 3] = value > 0 ? 255 : 0;
+        }
+
+        const imageData = new ImageData(rgbaData, segment.mask.width, segment.mask.height);
+        maskCtx.putImageData(imageData, 0, 0);
+
+        // Scale mask to original image size and draw (additive)
+        ctx.drawImage(maskCanvas, 0, 0, canvas.width, canvas.height);
       }
 
-      const imageData = new ImageData(
-        rgbaData,
-        segment.mask.width,
-        segment.mask.height
-      );
-      maskCtx.putImageData(imageData, 0, 0);
-
-      // Scale mask to original image size if needed
-      ctx.save();
-      ctx.drawImage(maskCanvas, 0, 0, canvas.width, canvas.height);
+      // Apply masks as a global clip for the original image
       ctx.globalCompositeOperation = 'source-in';
       ctx.drawImage(originalImg, 0, 0);
-      ctx.restore();
 
       const blob = await new Promise<Blob>((resolve) => canvas.toBlob(b => resolve(b!), 'image/png'));
-      results.set(canonicalLabel, blob);
+      results.set(label, blob);
     }
 
     return results;
