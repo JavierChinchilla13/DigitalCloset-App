@@ -86,6 +86,12 @@ public class ClothingItem {
     @Column(name = "mask_height")
     private Double maskHeight;
 
+    @Column(name = "is_modular")
+    private Boolean isModular = false;
+
+    @Column(name = "modular_data", columnDefinition = "TEXT")
+    private String modularData;
+
     @Column(name = "is_active")
     private Boolean isActive = true;
 
@@ -149,6 +155,22 @@ public class ClothingItem {
 
     public void setSide(String side) {
         this.side = side;
+    }
+
+    public Boolean getIsModular() {
+        return isModular;
+    }
+
+    public void setIsModular(Boolean isModular) {
+        this.isModular = isModular;
+    }
+
+    public String getModularData() {
+        return modularData;
+    }
+
+    public void setModularData(String modularData) {
+        this.modularData = modularData;
     }
 
     public Boolean getActive() {

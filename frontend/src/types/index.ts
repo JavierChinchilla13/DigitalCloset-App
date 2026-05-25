@@ -76,9 +76,22 @@ export interface ClothingItem {
   personaType: PersonaType;
   transform: ClothingTransform;
   side?: 'left' | 'right';
+  isModular?: boolean;
+  modularData?: string; // JSON string
   active?: boolean;
   uploadDate?: string;
   isFavorite?: boolean;
+}
+
+export interface ModularJacketData {
+  segments: {
+    torso?: { imageUrl: string; transform: ClothingTransform };
+    leftSleeve?: { imageUrl: string; transform: ClothingTransform };
+    rightSleeve?: { imageUrl: string; transform: ClothingTransform };
+    collar?: { imageUrl: string; transform: ClothingTransform };
+  };
+  isOpen?: boolean;
+  renderOrder?: string[];
 }
 
 export interface OutfitItem {

@@ -40,6 +40,8 @@ public class ClothingService {
         item.setCategory(request.getCategory());
         item.setImageUrl(request.getImageUrl());
         item.setSide(request.getSide());
+        item.setIsModular(request.getIsModular() != null ? request.getIsModular() : false);
+        item.setModularData(request.getModularData());
         item.setPersonaType(request.getPersonaType());
         
         if (request.getTransform() != null) {
@@ -97,6 +99,12 @@ public class ClothingService {
         }
         if (request.getPersonaType() != null) {
             item.setPersonaType(request.getPersonaType());
+        }
+        if (request.getIsModular() != null) {
+            item.setIsModular(request.getIsModular());
+        }
+        if (request.getModularData() != null) {
+            item.setModularData(request.getModularData());
         }
         if (request.getTransform() != null) {
             item.setTransformX(request.getTransform().getX());
@@ -165,6 +173,8 @@ public class ClothingService {
                 item.getCategory(),
                 item.getImageUrl(),
                 item.getSide(),
+                item.getIsModular(),
+                item.getModularData(),
                 item.getPersonaType(),
                 transform,
                 item.getActive(),

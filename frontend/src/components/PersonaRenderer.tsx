@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
-import { PersonaType, type PersonaState } from '../types';
+import { PersonaType, type PersonaState, type ModularJacketData } from '../types';
 import PersonaLayer from './PersonaLayer';
 import { useClothingStore } from '../store/useClothingStore';
 import { usePersonaStore } from '../store/usePersonaStore';
@@ -139,14 +139,43 @@ const PersonaRenderer: React.FC<PersonaRendererProps> = ({
 
   // Add Jackets (Z: 40-49)
   jackets.forEach((item, index) => {
-    layers.push({
-      id: `jacket-${item.itemId}`,
-      imageUrl: item.imageUrl,
-      zIndex: 40 + index,
-      transform: item.transform,
-      category: item.category,
-      personaType: persona.type
-    });
+    if (item.isModular && item.modularData) {
+      try {
+        const modularData: ModularJacketData = JSON.parse(item.modularData);
+        const order = modularData.renderOrder || ['torso', 'leftSleeve', 'rightSleeve', 'collar'];
+        order.forEach((partName, partIndex) => {
+          const segment = modularData.segments[partName as keyof ModularJacketData['segments']];
+          if (segment) {
+            layers.push({
+              id: `jacket-${item.itemId}-${partName}`,
+              imageUrl: segment.imageUrl,
+              zIndex: 40 + index + (partIndex * 0.01),
+              transform: segment.transform,
+              category: item.category,
+              personaType: persona.type
+            });
+          }
+        });
+      } catch (e) {
+        layers.push({
+          id: `jacket-${item.itemId}`,
+          imageUrl: item.imageUrl,
+          zIndex: 40 + index,
+          transform: item.transform,
+          category: item.category,
+          personaType: persona.type
+        });
+      }
+    } else {
+      layers.push({
+        id: `jacket-${item.itemId}`,
+        imageUrl: item.imageUrl,
+        zIndex: 40 + index,
+        transform: item.transform,
+        category: item.category,
+        personaType: persona.type
+      });
+    }
   });
 
   // Add Accessories (Z: 50-59)

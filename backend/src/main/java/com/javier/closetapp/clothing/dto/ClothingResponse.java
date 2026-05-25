@@ -10,6 +10,8 @@ public class ClothingResponse {
     private ClothingCategory category;
     private String imageUrl;
     private String side;
+    private Boolean isModular;
+    private String modularData;
     private com.javier.closetapp.common.enums.AvatarType personaType;
     private ClothingTransformDTO transform;
     private Boolean active;
@@ -19,6 +21,7 @@ public class ClothingResponse {
 
     public ClothingResponse(Long itemId, String name, String description, 
                             ClothingCategory category, String imageUrl, String side,
+                            Boolean isModular, String modularData,
                             com.javier.closetapp.common.enums.AvatarType personaType,
                             ClothingTransformDTO transform,
                             Boolean active, String uploadDate) {
@@ -28,6 +31,8 @@ public class ClothingResponse {
         this.category = category;
         this.imageUrl = imageUrl;
         this.side = side;
+        this.isModular = isModular;
+        this.modularData = modularData;
         this.personaType = personaType;
         this.transform = transform;
         this.active = active;
@@ -51,6 +56,12 @@ public class ClothingResponse {
 
     public String getSide() { return side; }
     public void setSide(String side) { this.side = side; }
+
+    public Boolean getIsModular() { return isModular; }
+    public void setIsModular(Boolean isModular) { this.isModular = isModular; }
+
+    public String getModularData() { return modularData; }
+    public void setModularData(String modularData) { this.modularData = modularData; }
 
     public com.javier.closetapp.common.enums.AvatarType getPersonaType() { return personaType; }
     public void setPersonaType(com.javier.closetapp.common.enums.AvatarType personaType) { this.personaType = personaType; }

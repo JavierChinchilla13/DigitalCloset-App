@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { type ClothingTransform, ClothingCategory, PersonaType } from '../types';
-import { DEFAULT_TRANSFORMS } from './FittingTool/Presets';
+import { DEFAULT_TRANSFORMS, SHOE_PAIR_PRESETS } from './FittingTool/Presets';
 
 interface PersonaLayerProps {
   id: string;

@@ -8,6 +8,8 @@ public class ClothingRequest {
     private ClothingCategory category;
     private String imageUrl;
     private String side;
+    private Boolean isModular;
+    private String modularData;
     private com.javier.closetapp.common.enums.AvatarType personaType;
     private ClothingTransformDTO transform;
 
@@ -27,6 +29,12 @@ public class ClothingRequest {
 
     public String getSide() { return side; }
     public void setSide(String side) { this.side = side; }
+
+    public Boolean getIsModular() { return isModular; }
+    public void setIsModular(Boolean isModular) { this.isModular = isModular; }
+
+    public String getModularData() { return modularData; }
+    public void setModularData(String modularData) { this.modularData = modularData; }
 
     public com.javier.closetapp.common.enums.AvatarType getPersonaType() { return personaType; }
     public void setPersonaType(com.javier.closetapp.common.enums.AvatarType personaType) { this.personaType = personaType; }
