@@ -6,6 +6,8 @@ DigitalCloset is a premium full-stack web application designed to help users man
 
 - **PNG-Layered Persona System**: Replaced abstract silhouettes with high-quality mannequin bases. Visualize garments in real-time with precise Z-index layering (Tops, Bottoms, Shoes, Outerwear, Accessories).
 - **High-Density Virtual Closet**: Efficiently manage hundreds of garments with a compact, responsive grid. Features instant search, category filtering, and a personalized Favorites system.
+- **Advanced Modular Outerwear**: Redesigned jacket system with AI-powered segmentation, allowing independent sleeve manipulation and realistic "open-jacket" layering.
+- **Precision Footwear Engine**: Specialized shoe studio supporting symmetrical/asymmetrical pairs with independent left/right fitting.
 - **Local Style Orchestration**: Create, save, duplicate, and edit outfit combinations. Uses a hybrid storage approach with local persistence for rapid style iteration.
 - **Cloudinary Integration**: Secure, direct-to-cloud image uploads with real-time previews and automatic metadata synchronization.
 - **Modern "Fashion-Tech" UI**: A dark luxury aesthetic built with Framer Motion for cinematic transitions, glass-morphic elements, and studio-grade lighting effects.
@@ -48,3 +50,5 @@ DigitalCloset is a premium full-stack web application designed to help users man
 - **Phase 5: Wardrobe Management**: Completed (High-density closet, Search, Favorites, Full Management Page).
 - **Phase 6: Style Orchestration**: Completed (Local Outfit Store, Multi-page navigation flow).
 - **Phase 7: Fabric Studio Evolution**: Completed (Fabric.js 2D Editor, Absolute Virtual Engine, High-Precision Cropping).
+- **Phase 8: Multi-Item Architecture**: Completed (Layered Equipping, Array-based item slots, Independent Shoe Pairs).
+- **Phase 9: Modular Fashion AI**: Completed (Transformers.js Segmentation, Mesh Warping/Puppet Warp, Dynamic Center Opening Masks).

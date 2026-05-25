@@ -44,6 +44,17 @@
     - **Cloud Persistence**: Garments and basic outfit metadata are stored in PostgreSQL.
     - **Local Orchestration**: Real-time style sets and user-defined outfit combinations are currently prioritized in the `LocalOutfitStore` for zero-latency iteration and instant "Wear Style" application.
 
+## Phase 6: Advanced Modular Orchestration Completed
+
+### 1. Modular Garment Persistence
+- **Entity Evolution**: Augmented `ClothingItem` with `isModular` and `modularData` (TEXT/JSON).
+- **Metadata Orchestration**: Supports storing multiple sub-segments (torso, sleeves) and their specific transforms within a single item record.
+- **DTO Enhancements**: Updated `ClothingRequest` and `ClothingResponse` to seamlessly transmit modular fashion architecture.
+
+### 2. Side-Aware Clothing
+- **Pair Identification**: Added `side` property to track left vs. right items (essential for the new Footwear Engine).
+- **Asymmetrical Support**: Backend now handles independent storage for items belonging to the same category but occupying different side slots.
+
 ---
 
 ## Technical Decisions
