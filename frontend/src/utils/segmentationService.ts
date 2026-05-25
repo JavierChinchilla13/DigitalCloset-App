@@ -13,7 +13,7 @@ class SegmentationService {
     
     try {
       this.segmenter = await pipeline('image-segmentation', this.modelName, {
-        device: 'webgpu', // Fallback to wasm is automatic if webgpu fails
+        device: 'webgpu',
       }) as ImageSegmentationPipeline;
     } catch (err) {
       console.warn("WebGPU not available, falling back to WASM/CPU", err);
@@ -47,9 +47,11 @@ class SegmentationService {
     
     const labelMap: Record<string, string> = {
       'Upper-clothes': 'torso',
+      'Coat': 'torso',
+      'Jumpsuits': 'torso',
       'Left-arm': 'leftSleeve',
       'Right-arm': 'rightSleeve',
-      'Necklace': 'collar', // Best guess for collar if detected
+      'Necklace': 'collar', 
       'Scarf': 'collar',
     };
 
@@ -73,8 +75,20 @@ class SegmentationService {
       maskCanvas.height = segment.mask.height;
       const maskCtx = maskCanvas.getContext('2d')!;
       
+      // Convert single-channel mask data (L) to 4-channel RGBA data
+      const maskData = segment.mask.data;
+      const rgbaData = new Uint8ClampedArray(maskData.length * 4);
+      
+      for (let i = 0; i < maskData.length; ++i) {
+        const value = maskData[i];
+        rgbaData[i * 4] = 0;       // R
+        rgbaData[i * 4 + 1] = 0;   // G
+        rgbaData[i * 4 + 2] = 0;   // B
+        rgbaData[i * 4 + 3] = value; // A (using mask value as alpha)
+      }
+
       const imageData = new ImageData(
-        new Uint8ClampedArray(segment.mask.data),
+        rgbaData,
         segment.mask.width,
         segment.mask.height
       );
