@@ -44,22 +44,122 @@ const PersonaRenderer: React.FC<PersonaRendererProps> = ({
     return item;
   };
 
-  const bottom = getItem(persona.bottomId);
-  const shoes = getItem(persona.shoesId);
-  const top = getItem(persona.topId);
-  const dress = getItem(persona.dressId);
-  const jacket = getItem(persona.jacketId);
-  const accessory = getItem(persona.accessoryId);
+  const getItems = (itemIds: number[] | undefined | null) => {
+    if (!itemIds || !Array.isArray(itemIds)) return [];
+    return itemIds
+      .map(id => getItem(id))
+      .filter((item): item is NonNullable<typeof item> => !!item);
+  };
 
-  const layers = [
+  const bottoms = getItems(persona.bottomIds);
+  const leftShoe = getItem(persona.leftShoeId);
+  const rightShoe = getItem(persona.rightShoeId);
+  const tops = getItems(persona.topIds);
+  const dresses = getItems(persona.dressIds);
+  const jackets = getItems(persona.jacketIds);
+  const accessories = getItems(persona.accessoryIds);
+
+  const layers: any[] = [
     { id: 'base', imageUrl: baseImage, zIndex: 1, alt: 'Mannequin' },
-    { id: 'bottom', imageUrl: bottom?.imageUrl, zIndex: 10, transform: bottom?.transform, category: bottom?.category, personaType: persona.type },
-    { id: 'shoes', imageUrl: shoes?.imageUrl, zIndex: 20, transform: shoes?.transform, category: shoes?.category, personaType: persona.type },
-    { id: 'dress', imageUrl: dress?.imageUrl, zIndex: 25, transform: dress?.transform, category: dress?.category, personaType: persona.type },
-    { id: 'top', imageUrl: top?.imageUrl, zIndex: 30, transform: top?.transform, category: top?.category, personaType: persona.type },
-    { id: 'jacket', imageUrl: jacket?.imageUrl, zIndex: 40, transform: jacket?.transform, category: jacket?.category, personaType: persona.type },
-    { id: 'accessory', imageUrl: accessory?.imageUrl, zIndex: 50, transform: accessory?.transform, category: accessory?.category, personaType: persona.type },
   ];
+
+  // Add Bottoms (Z: 10-19)
+  bottoms.forEach((item, index) => {
+    layers.push({
+      id: `bottom-${item.itemId}`,
+      imageUrl: item.imageUrl,
+      zIndex: 10 + index,
+      transform: item.transform,
+      category: item.category,
+      personaType: persona.type
+    });
+  });
+
+  // Add Shoes (Z: 20-24)
+  if (leftShoe && rightShoe && leftShoe.itemId === rightShoe.itemId) {
+    // Legacy behavior: Single image contains both shoes
+    layers.push({
+      id: `shoes-pair-${leftShoe.itemId}`,
+      imageUrl: leftShoe.imageUrl,
+      zIndex: 20,
+      transform: leftShoe.transform,
+      category: leftShoe.category,
+      personaType: persona.type
+      // No side property -> Uses centered preset
+    });
+  } else {
+    // Independent or mismatched slots
+    if (leftShoe) {
+      layers.push({
+        id: `left-shoe-${leftShoe.itemId}`,
+        imageUrl: leftShoe.imageUrl,
+        zIndex: 20,
+        transform: leftShoe.transform,
+        category: leftShoe.category,
+        personaType: persona.type,
+        side: 'left'
+      });
+    }
+    if (rightShoe) {
+      layers.push({
+        id: `right-shoe-${rightShoe.itemId}`,
+        imageUrl: rightShoe.imageUrl,
+        zIndex: 21,
+        transform: rightShoe.transform,
+        category: rightShoe.category,
+        personaType: persona.type,
+        side: 'right'
+      });
+    }
+  }
+
+  // Add Dresses (Z: 25-29)
+  dresses.forEach((item, index) => {
+    layers.push({
+      id: `dress-${item.itemId}`,
+      imageUrl: item.imageUrl,
+      zIndex: 25 + index,
+      transform: item.transform,
+      category: item.category,
+      personaType: persona.type
+    });
+  });
+
+  // Add Tops (Z: 30-39)
+  tops.forEach((item, index) => {
+    layers.push({
+      id: `top-${item.itemId}`,
+      imageUrl: item.imageUrl,
+      zIndex: 30 + index,
+      transform: item.transform,
+      category: item.category,
+      personaType: persona.type
+    });
+  });
+
+  // Add Jackets (Z: 40-49)
+  jackets.forEach((item, index) => {
+    layers.push({
+      id: `jacket-${item.itemId}`,
+      imageUrl: item.imageUrl,
+      zIndex: 40 + index,
+      transform: item.transform,
+      category: item.category,
+      personaType: persona.type
+    });
+  });
+
+  // Add Accessories (Z: 50-59)
+  accessories.forEach((item, index) => {
+    layers.push({
+      id: `accessory-${item.itemId}`,
+      imageUrl: item.imageUrl,
+      zIndex: 50 + index,
+      transform: item.transform,
+      category: item.category,
+      personaType: persona.type
+    });
+  });
 
   return (
     <div className={`relative w-full flex items-center justify-center overflow-visible ${className}`}>

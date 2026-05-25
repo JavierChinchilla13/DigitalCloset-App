@@ -7,6 +7,7 @@ public class ClothingRequest {
     private String description;
     private ClothingCategory category;
     private String imageUrl;
+    private String side;
     private com.javier.closetapp.common.enums.AvatarType personaType;
     private ClothingTransformDTO transform;
 
@@ -23,6 +24,9 @@ public class ClothingRequest {
 
     public String getImageUrl() { return imageUrl; }
     public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
+
+    public String getSide() { return side; }
+    public void setSide(String side) { this.side = side; }
 
     public com.javier.closetapp.common.enums.AvatarType getPersonaType() { return personaType; }
     public void setPersonaType(com.javier.closetapp.common.enums.AvatarType personaType) { this.personaType = personaType; }

@@ -19,12 +19,15 @@ import { cloudinaryService } from '../../api/cloudinaryService';
 import { removeBackground } from '../../utils/removeBackground';
 import FittingEditor from './FittingEditor';
 
+import ShoeSymmetryCheck from './ShoeSymmetryCheck';
+import ShoeFittingEditor from './ShoeFittingEditor';
+
 interface UploadFlowProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-type Step = 'UPLOAD' | 'CONFIG' | 'PROCESSING' | 'FITTING';
+type Step = 'UPLOAD' | 'CONFIG' | 'PROCESSING' | 'FITTING' | 'SHOE_SYMMETRY' | 'SHOE_UPLOAD_RIGHT' | 'SHOE_FITTING';
 
 const CATEGORY_ICONS: Record<ClothingCategory, React.ElementType> = {
   [ClothingCategory.TOP]: Shirt,
@@ -39,6 +42,12 @@ const UploadFlow: React.FC<UploadFlowProps> = ({ isOpen, onClose }) => {
   const [step, setStep] = useState<Step>('UPLOAD');
   const [file, setFile] = useState<File | null>(null);
   
+  // Shoe Specific State
+  const [rightFile, setRightFile] = useState<File | null>(null);
+  const [isAsymmetrical, setIsAsymmetrical] = useState(false);
+  const [leftProcessedUrl, setLeftProcessedUrl] = useState<string | null>(null);
+  const [rightProcessedUrl, setRightProcessedUrl] = useState<string | null>(null);
+
   // Config State
   const [category, setCategory] = useState<ClothingCategory>(ClothingCategory.TOP);
   const [personaType, setPersonaType] = useState<PersonaType>(PersonaType.MALE);
@@ -53,6 +62,10 @@ const UploadFlow: React.FC<UploadFlowProps> = ({ isOpen, onClose }) => {
   const resetFlow = () => {
     setStep('UPLOAD');
     setFile(null);
+    setRightFile(null);
+    setIsAsymmetrical(false);
+    setLeftProcessedUrl(null);
+    setRightProcessedUrl(null);
     setCategory(ClothingCategory.TOP);
     setPersonaType(PersonaType.MALE);
     setProcessedImageUrl(null);
@@ -69,6 +82,14 @@ const UploadFlow: React.FC<UploadFlowProps> = ({ isOpen, onClose }) => {
     setStep('CONFIG');
   };
 
+  const handleNextAfterConfig = () => {
+    if (category === ClothingCategory.SHOES) {
+      setStep('SHOE_SYMMETRY');
+    } else {
+      startProcessing();
+    }
+  };
+
   const startProcessing = async () => {
     if (!file) return;
     
@@ -76,16 +97,39 @@ const UploadFlow: React.FC<UploadFlowProps> = ({ isOpen, onClose }) => {
     setError(null);
     
     try {
-      // 1. Remove Background
-      setProcessingStatus('Removing background...');
-      const transparentBlob = await removeBackground(file);
-      
-      // 2. Upload to Cloudinary
-      setProcessingStatus('Uploading to secure cloud...');
-      const url = await cloudinaryService.uploadImage(transparentBlob);
-      
-      setProcessedImageUrl(url);
-      setStep('FITTING');
+      // If it's shoes, we might have two files
+      if (category === ClothingCategory.SHOES) {
+         setProcessingStatus('Digitizing pair assets...');
+         
+         // 1. Process Left Shoe
+         setProcessingStatus('Perfecting left shoe...');
+         const leftBlob = await removeBackground(file);
+         const leftUrl = await cloudinaryService.uploadImage(leftBlob);
+         setLeftProcessedUrl(leftUrl);
+
+         // 2. Process Right Shoe
+         if (isAsymmetrical && rightFile) {
+            setProcessingStatus('Perfecting right shoe...');
+            const rightBlob = await removeBackground(rightFile);
+            const rightUrl = await cloudinaryService.uploadImage(rightBlob);
+            setRightProcessedUrl(rightUrl);
+         } else {
+            // Symmetrical: Use same image (Editor will flip it)
+            setRightProcessedUrl(leftUrl);
+         }
+         
+         setStep('SHOE_FITTING');
+      } else {
+         // Standard Flow
+         setProcessingStatus('Removing background...');
+         const transparentBlob = await removeBackground(file);
+         
+         setProcessingStatus('Uploading to secure cloud...');
+         const url = await cloudinaryService.uploadImage(transparentBlob);
+         
+         setProcessedImageUrl(url);
+         setStep('FITTING');
+      }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Processing failed. Please try again.';
       setError(message);
@@ -111,6 +155,47 @@ const UploadFlow: React.FC<UploadFlowProps> = ({ isOpen, onClose }) => {
     }
   };
 
+  const handleShoeSave = async (data: { 
+    name: string; 
+    description: string; 
+    leftTransform: ClothingTransform; 
+    rightTransform: ClothingTransform;
+    skipLeft: boolean;
+    skipRight: boolean;
+  }) => {
+    try {
+      // Save Left Shoe
+      if (!data.skipLeft && leftProcessedUrl) {
+        await addItem({
+          name: `${data.name} (Left)`,
+          description: data.description,
+          category: ClothingCategory.SHOES,
+          personaType,
+          imageUrl: leftProcessedUrl,
+          side: 'left',
+          transform: data.leftTransform
+        });
+      }
+
+      // Save Right Shoe
+      if (!data.skipRight && rightProcessedUrl) {
+        await addItem({
+          name: `${data.name} (Right)`,
+          description: data.description,
+          category: ClothingCategory.SHOES,
+          personaType,
+          imageUrl: rightProcessedUrl,
+          side: 'right',
+          transform: data.rightTransform
+        });
+      }
+
+      handleClose();
+    } catch (err: unknown) {
+      setError('Failed to save shoe pair.');
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -127,7 +212,7 @@ const UploadFlow: React.FC<UploadFlowProps> = ({ isOpen, onClose }) => {
         initial={{ scale: 0.95, opacity: 0, y: 20 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
         className={`relative bg-background-secondary border border-white/5 rounded-[3rem] shadow-2xl overflow-hidden transition-all duration-700 ${
-          step === 'FITTING' ? 'w-full max-w-6xl h-[90vh]' : 'w-full max-w-2xl'
+          step === 'FITTING' || step === 'SHOE_FITTING' ? 'w-full max-w-6xl h-[90vh]' : 'w-full max-w-2xl'
         }`}
         onClick={(e) => e.stopPropagation()}
       >
@@ -145,12 +230,16 @@ const UploadFlow: React.FC<UploadFlowProps> = ({ isOpen, onClose }) => {
             className="h-full bg-accent"
             initial={{ width: '0%' }}
             animate={{ 
-              width: step === 'UPLOAD' ? '25%' : step === 'CONFIG' ? '50%' : step === 'PROCESSING' ? '75%' : '100%' 
+              width: step === 'UPLOAD' ? '15%' : 
+                     step === 'CONFIG' ? '30%' : 
+                     step === 'SHOE_SYMMETRY' ? '45%' :
+                     step === 'SHOE_UPLOAD_RIGHT' ? '60%' :
+                     step === 'PROCESSING' ? '80%' : '100%' 
             }}
           />
         </div>
 
-        <div className="p-8 md:p-12 h-full flex flex-col">
+        <div className="p-8 md:p-12 h-full flex flex-col overflow-y-auto no-scrollbar">
           <AnimatePresence mode="wait">
             {step === 'UPLOAD' && (
               <motion.div 
@@ -162,7 +251,7 @@ const UploadFlow: React.FC<UploadFlowProps> = ({ isOpen, onClose }) => {
               >
                 <div className="text-center space-y-2">
                   <h2 className="text-3xl font-light tracking-tighter text-white uppercase italic">Step 1 — Initial Intake</h2>
-                  <p className="text-text-secondary text-[10px] font-black tracking-widest uppercase opacity-40">Drop your garment to begin digitization</p>
+                  <p className="text-text-secondary text-[10px] font-black tracking-widest uppercase opacity-40">Drop your garment (or left shoe) to begin digitization</p>
                 </div>
 
                 <div 
@@ -179,7 +268,7 @@ const UploadFlow: React.FC<UploadFlowProps> = ({ isOpen, onClose }) => {
                   <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-accent/10 transition-all duration-500">
                     <Upload className="text-accent" size={32} />
                   </div>
-                  <p className="text-white font-bold tracking-tight text-lg">Select Garment Image</p>
+                  <p className="text-white font-bold tracking-tight text-lg">Select Image</p>
                   <p className="text-text-secondary text-[10px] font-black tracking-[0.3em] uppercase opacity-30 mt-2">PNG / JPG / WEBP</p>
                 </div>
               </motion.div>
@@ -253,12 +342,57 @@ const UploadFlow: React.FC<UploadFlowProps> = ({ isOpen, onClose }) => {
                 </div>
 
                 <button 
-                  onClick={startProcessing}
+                  onClick={handleNextAfterConfig}
                   className="w-full py-6 bg-accent hover:bg-accent-hover text-white rounded-[2rem] font-black text-xs tracking-[0.4em] uppercase transition-all shadow-xl shadow-accent/20 active:scale-[0.98] flex items-center justify-center gap-3"
                 >
                   <Sparkles size={18} />
-                  <span>Begin Digitization</span>
+                  <span>Next Step</span>
                 </button>
+              </motion.div>
+            )}
+
+            {step === 'SHOE_SYMMETRY' && (
+              <ShoeSymmetryCheck onSelect={(diff) => {
+                 setIsAsymmetrical(diff);
+                 if (diff) setStep('SHOE_UPLOAD_RIGHT');
+                 else startProcessing();
+              }} />
+            )}
+
+            {step === 'SHOE_UPLOAD_RIGHT' && (
+              <motion.div 
+                key="upload-right"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="space-y-8"
+              >
+                <div className="text-center space-y-2">
+                  <h2 className="text-3xl font-light tracking-tighter text-white uppercase italic">Step 3 — Second Asset</h2>
+                  <p className="text-text-secondary text-[10px] font-black tracking-widest uppercase opacity-40">Upload the RIGHT shoe image</p>
+                </div>
+
+                <div 
+                  onClick={() => document.getElementById('right-file-input')?.click()}
+                  className="aspect-video rounded-[2.5rem] border-2 border-dashed border-white/10 bg-white/[0.02] hover:bg-white/[0.05] hover:border-emerald-500/50 transition-all duration-500 cursor-pointer flex flex-col items-center justify-center group"
+                >
+                  <input 
+                    id="right-file-input"
+                    type="file"
+                    className="hidden"
+                    accept="image/*"
+                    onChange={(e) => {
+                      if (e.target.files?.[0]) {
+                        setRightFile(e.target.files[0]);
+                        startProcessing();
+                      }
+                    }}
+                  />
+                  <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-emerald-500/10 transition-all duration-500">
+                    <Upload className="text-emerald-500" size={32} />
+                  </div>
+                  <p className="text-white font-bold tracking-tight text-lg">Select Right Shoe</p>
+                </div>
               </motion.div>
             )}
 
@@ -304,22 +438,6 @@ const UploadFlow: React.FC<UploadFlowProps> = ({ isOpen, onClose }) => {
                         Go Back
                       </button>
                       <button 
-                        onClick={async () => {
-                          if (!file) return;
-                          setProcessingStatus('Uploading original image...');
-                          try {
-                            const url = await cloudinaryService.uploadImage(file);
-                            setProcessedImageUrl(url);
-                            setStep('FITTING');
-                          } catch (err: unknown) {
-                            setError(err instanceof Error ? err.message : 'Upload failed');
-                          }
-                        }}
-                        className="flex-1 py-5 bg-white/10 hover:bg-white/20 text-white rounded-2xl font-black text-[10px] tracking-widest uppercase transition-all"
-                      >
-                        Skip AI
-                      </button>
-                      <button 
                         onClick={startProcessing}
                         className="flex-1 py-5 bg-accent text-white rounded-2xl font-black text-[10px] tracking-widest uppercase transition-all"
                       >
@@ -344,6 +462,23 @@ const UploadFlow: React.FC<UploadFlowProps> = ({ isOpen, onClose }) => {
                   personaType={personaType}
                   onSave={handleSave}
                   onBack={() => setStep('CONFIG')}
+                />
+              </motion.div>
+            )}
+
+            {step === 'SHOE_FITTING' && (
+              <motion.div 
+                key="shoe-fitting"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex-1 h-full"
+              >
+                <ShoeFittingEditor 
+                  leftImageUrl={leftProcessedUrl!}
+                  rightImageUrl={rightProcessedUrl!}
+                  personaType={personaType}
+                  onSave={handleShoeSave}
+                  onBack={() => setStep('SHOE_SYMMETRY')}
                 />
               </motion.div>
             )}

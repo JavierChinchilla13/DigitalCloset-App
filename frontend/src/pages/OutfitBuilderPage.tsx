@@ -19,7 +19,7 @@ const OutfitBuilderPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { items: closetItems, fetchItems, isLoading: loadingCloset } = useClothingStore();
-  const { persona, updatePersona, setEquippedItem } = usePersonaStore();
+  const { persona, updatePersona, setEquippedItem, clearEquipped } = usePersonaStore();
   const { outfits, saveOutfit, updateOutfit, _hasHydrated } = useLocalOutfitStore();
 
   const [outfitName, setOutfitName] = useState('New Style');
@@ -44,9 +44,10 @@ const OutfitBuilderPage = () => {
   const handleSave = async () => {
     setIsSaving(true);
     
-    // In a real app, we'd use html2canvas or similar to capture the PersonaRenderer
-    const previewImage = closetItems.find(i => i.itemId === persona.topId)?.imageUrl || 
-                         closetItems.find(i => i.itemId === persona.bottomId)?.imageUrl ||
+    // Find the first equipped image for preview
+    const previewImage = closetItems.find(i => persona.topIds.includes(i.itemId))?.imageUrl || 
+                         closetItems.find(i => persona.bottomIds.includes(i.itemId))?.imageUrl ||
+                         closetItems.find(i => i.itemId === persona.leftShoeId)?.imageUrl ||
                          "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=600&h=800&fit=crop";
 
     const outfitData = {
@@ -54,11 +55,13 @@ const OutfitBuilderPage = () => {
       preview: previewImage,
       personaType: persona.type,
       items: {
-        topId: persona.topId,
-        bottomId: persona.bottomId,
-        shoesId: persona.shoesId,
-        accessoryId: persona.accessoryId,
-        jacketId: persona.jacketId,
+        topIds: persona.topIds,
+        bottomIds: persona.bottomIds,
+        leftShoeId: persona.leftShoeId,
+        rightShoeId: persona.rightShoeId,
+        accessoryIds: persona.accessoryIds,
+        jacketIds: persona.jacketIds,
+        dressIds: persona.dressIds,
       }
     };
 
@@ -78,25 +81,23 @@ const OutfitBuilderPage = () => {
   };
 
   const clearLook = () => {
-    updatePersona({
-      topId: null,
-      bottomId: null,
-      shoesId: null,
-      accessoryId: null,
-      jacketId: null,
-    });
+    clearEquipped();
   };
 
   const isEquipped = (itemId: number) => {
-    return Object.values(persona).includes(itemId);
+    return (
+      persona.topIds.includes(itemId) ||
+      persona.bottomIds.includes(itemId) ||
+      persona.leftShoeId === itemId ||
+      persona.rightShoeId === itemId ||
+      persona.accessoryIds.includes(itemId) ||
+      persona.jacketIds.includes(itemId) ||
+      persona.dressIds.includes(itemId)
+    );
   };
 
   const toggleItem = (item: any) => {
-    if (isEquipped(item.itemId)) {
-      setEquippedItem(item.category, null);
-    } else {
-      setEquippedItem(item.category, item.itemId);
-    }
+    setEquippedItem(item);
   };
 
   if (!_hasHydrated) {

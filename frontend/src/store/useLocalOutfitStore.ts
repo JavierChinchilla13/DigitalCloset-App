@@ -9,11 +9,13 @@ export interface LocalOutfit {
   preview: string; // Base64 or URL
   personaType: PersonaType;
   items: {
-    topId: number | null;
-    bottomId: number | null;
-    shoesId: number | null;
-    accessoryId: number | null;
-    jacketId: number | null;
+    topIds: number[];
+    bottomIds: number[];
+    leftShoeId: number | null;
+    rightShoeId: number | null;
+    accessoryIds: number[];
+    jacketIds: number[];
+    dressIds: number[];
   };
 }
 

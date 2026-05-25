@@ -12,6 +12,7 @@ interface PersonaLayerProps {
   alt?: string;
   category?: ClothingCategory;
   personaType?: PersonaType;
+  side?: 'left' | 'right';
 }
 
 const PersonaLayer: React.FC<PersonaLayerProps> = ({ 
@@ -21,7 +22,8 @@ const PersonaLayer: React.FC<PersonaLayerProps> = ({
   className = "", 
   alt = "",
   category,
-  personaType
+  personaType = PersonaType.MALE,
+  side
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerHeight, setContainerHeight] = useState(0);
@@ -43,9 +45,16 @@ const PersonaLayer: React.FC<PersonaLayerProps> = ({
   const VIRTUAL_WIDTH = 750;
   const viewScale = containerHeight / VIRTUAL_HEIGHT;
 
-  const finalTransform = transform?.width 
-    ? transform 
-    : (category && personaType ? DEFAULT_TRANSFORMS[personaType][category] : null);
+  // Determination of final transform
+  let finalTransform = transform?.width ? transform : null;
+  
+  if (!finalTransform && category) {
+    if (category === ClothingCategory.SHOES && side) {
+      finalTransform = SHOE_PAIR_PRESETS[personaType][side];
+    } else if (DEFAULT_TRANSFORMS[personaType][category]) {
+      finalTransform = DEFAULT_TRANSFORMS[personaType][category];
+    }
+  }
 
   if (!imageUrl) return null;
 

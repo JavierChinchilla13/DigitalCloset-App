@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Shirt, Info, Edit2, Trash2, Star } from 'lucide-react';
 import type { ClothingItem } from '../types';
@@ -22,14 +22,32 @@ const ClothingCard: React.FC<ClothingCardProps> = ({
 }) => {
   const { setEquippedItem, persona } = usePersonaStore();
   const { toggleFavorite } = useClothingStore();
-  const isEquipped = Object.values(persona).includes(item.itemId);
+
+  const isEquipped = useMemo(() => {
+    if (item.category === 'SHOES') {
+      return persona.leftShoeId === item.itemId || persona.rightShoeId === item.itemId;
+    }
+    
+    const keyMap: Record<string, keyof PersonaState> = {
+      'TOP': 'topIds',
+      'BOTTOM': 'bottomIds',
+      'JACKET': 'jacketIds',
+      'DRESS': 'dressIds',
+      'ACCESSORY': 'accessoryIds',
+    };
+    
+    const key = keyMap[item.category];
+    if (!key) return false;
+    
+    const ids = persona[key];
+    return Array.isArray(ids) && ids.includes(item.itemId);
+  }, [persona, item]);
 
   const handleEquip = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (isEquipped) {
-      setEquippedItem(item.category, null);
-    } else {
-      setEquippedItem(item.category, item.itemId);
+    setEquippedItem(item);
+    
+    if (!isEquipped) {
       // Auto-scroll to persona section to see the change
       const personaEl = document.getElementById('persona');
       if (personaEl) {

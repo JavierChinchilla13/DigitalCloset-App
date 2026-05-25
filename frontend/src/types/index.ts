@@ -14,12 +14,13 @@ export interface PersonaState {
   bodyType?: string;
   height?: number;
   hairId?: string;
-  topId?: number | null;
-  bottomId?: number | null;
-  shoesId?: number | null;
-  accessoryId?: number | null;
-  jacketId?: number | null;
-  dressId?: number | null;
+  topIds: number[];
+  bottomIds: number[];
+  leftShoeId: number | null;
+  rightShoeId: number | null;
+  accessoryIds: number[];
+  jacketIds: number[];
+  dressIds: number[];
 }
 
 export interface User {
@@ -74,6 +75,7 @@ export interface ClothingItem {
   imageUrl: string;
   personaType: PersonaType;
   transform: ClothingTransform;
+  side?: 'left' | 'right';
   active?: boolean;
   uploadDate?: string;
   isFavorite?: boolean;
@@ -90,6 +92,20 @@ export interface OutfitItem {
   scaleY: number;
   rotation: number;
   itemOrder: number;
+}
+
+export interface ShoePair {
+  leftShoe: {
+    imageUrl: string;
+    transform: ClothingTransform;
+  };
+  rightShoe: {
+    imageUrl: string;
+    transform: ClothingTransform;
+  };
+  mirrored: boolean;
+  category: ClothingCategory;
+  personaType: PersonaType;
 }
 
 export interface Outfit {

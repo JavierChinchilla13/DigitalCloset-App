@@ -19,8 +19,9 @@ const AvatarSection = () => {
     setIsSaving(true);
 
     const previewImage =
-      items.find((i) => i.itemId === persona.topId)?.imageUrl ||
-      items.find((i) => i.itemId === persona.bottomId)?.imageUrl ||
+      items.find((i) => persona.topIds.includes(i.itemId))?.imageUrl ||
+      items.find((i) => persona.bottomIds.includes(i.itemId))?.imageUrl ||
+      items.find((i) => i.itemId === persona.leftShoeId)?.imageUrl ||
       "/personas/male-base.png";
 
     const outfitData = {
@@ -28,11 +29,13 @@ const AvatarSection = () => {
       preview: previewImage,
       personaType: persona.type,
       items: {
-        topId: persona.topId,
-        bottomId: persona.bottomId,
-        shoesId: persona.shoesId,
-        accessoryId: persona.accessoryId,
-        jacketId: persona.jacketId,
+        topIds: persona.topIds,
+        bottomIds: persona.bottomIds,
+        leftShoeId: persona.leftShoeId,
+        rightShoeId: persona.rightShoeId,
+        accessoryIds: persona.accessoryIds,
+        jacketIds: persona.jacketIds,
+        dressIds: persona.dressIds,
       },
     };
 

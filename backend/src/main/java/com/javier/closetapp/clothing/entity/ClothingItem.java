@@ -34,6 +34,9 @@ public class ClothingItem {
     @Column(name = "image_url", nullable = false, length = 500)
     private String imageUrl;
 
+    @Column(name = "side")
+    private String side;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "persona_type", nullable = false)
     private com.javier.closetapp.common.enums.AvatarType personaType;
@@ -138,6 +141,14 @@ public class ClothingItem {
 
     public void setImageUrl(String imageUrl) {
         this.imageUrl = imageUrl;
+    }
+
+    public String getSide() {
+        return side;
+    }
+
+    public void setSide(String side) {
+        this.side = side;
     }
 
     public Boolean getActive() {

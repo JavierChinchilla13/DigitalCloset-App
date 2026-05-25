@@ -9,6 +9,7 @@ public class ClothingResponse {
     private String description;
     private ClothingCategory category;
     private String imageUrl;
+    private String side;
     private com.javier.closetapp.common.enums.AvatarType personaType;
     private ClothingTransformDTO transform;
     private Boolean active;
@@ -17,7 +18,7 @@ public class ClothingResponse {
     public ClothingResponse() {}
 
     public ClothingResponse(Long itemId, String name, String description, 
-                            ClothingCategory category, String imageUrl, 
+                            ClothingCategory category, String imageUrl, String side,
                             com.javier.closetapp.common.enums.AvatarType personaType,
                             ClothingTransformDTO transform,
                             Boolean active, String uploadDate) {
@@ -26,6 +27,7 @@ public class ClothingResponse {
         this.description = description;
         this.category = category;
         this.imageUrl = imageUrl;
+        this.side = side;
         this.personaType = personaType;
         this.transform = transform;
         this.active = active;
@@ -46,6 +48,9 @@ public class ClothingResponse {
 
     public String getImageUrl() { return imageUrl; }
     public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
+
+    public String getSide() { return side; }
+    public void setSide(String side) { this.side = side; }
 
     public com.javier.closetapp.common.enums.AvatarType getPersonaType() { return personaType; }
     public void setPersonaType(com.javier.closetapp.common.enums.AvatarType personaType) { this.personaType = personaType; }

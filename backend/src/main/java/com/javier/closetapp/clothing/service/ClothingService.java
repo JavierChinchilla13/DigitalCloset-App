@@ -39,6 +39,7 @@ public class ClothingService {
         item.setDescription(request.getDescription());
         item.setCategory(request.getCategory());
         item.setImageUrl(request.getImageUrl());
+        item.setSide(request.getSide());
         item.setPersonaType(request.getPersonaType());
         
         if (request.getTransform() != null) {
@@ -163,6 +164,7 @@ public class ClothingService {
                 item.getDescription(),
                 item.getCategory(),
                 item.getImageUrl(),
+                item.getSide(),
                 item.getPersonaType(),
                 transform,
                 item.getActive(),
