@@ -51,10 +51,19 @@ export enum ClothingCategory {
 export interface ClothingTransform {
   x: number;
   y: number;
-  scale: number;
+  scaleX: number;
+  scaleY: number;
   rotation: number;
   width?: number;
   height?: number;
+  opacity?: number;
+  flipX?: boolean;
+  flipY?: boolean;
+  zIndex?: number;
+  maskTop?: number;
+  maskLeft?: number;
+  maskWidth?: number;
+  maskHeight?: number;
 }
 
 export interface ClothingItem {

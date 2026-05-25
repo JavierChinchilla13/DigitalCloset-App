@@ -40,14 +40,66 @@ const PersonaLayer: React.FC<PersonaLayerProps> = ({
   }, []);
 
   const VIRTUAL_HEIGHT = 1000;
+  const VIRTUAL_WIDTH = 750;
   const viewScale = containerHeight / VIRTUAL_HEIGHT;
 
   const finalTransform = transform?.width 
     ? transform 
     : (category && personaType ? DEFAULT_TRANSFORMS[personaType][category] : null);
 
-  // If no image, render nothing (no AnimatePresence lag)
   if (!imageUrl) return null;
+
+  const getStyle = () => {
+    if (!finalTransform) {
+      return {
+        height: '100%',
+        width: 'auto',
+        objectFit: 'contain' as const,
+        visibility: 'visible' as const,
+        opacity: 1
+      };
+    }
+
+    // Dimension Reconstruction
+    const width = (finalTransform.width || 450) * viewScale;
+    const height = (finalTransform.height || 450) * viewScale;
+    
+    // Translation relative to center
+    const offsetX = (finalTransform.x - VIRTUAL_WIDTH / 2) * viewScale;
+    const offsetY = (finalTransform.y - VIRTUAL_HEIGHT / 2) * viewScale;
+
+    // Mask Calculation
+    let clipPath = 'none';
+    if (finalTransform.maskWidth && finalTransform.maskHeight) {
+      const gW = finalTransform.width || 450;
+      const gH = finalTransform.height || 450;
+      const gLeft = finalTransform.x - gW / 2;
+      const gTop = finalTransform.y - gH / 2;
+
+      const insetLeft = ((finalTransform.maskLeft! - gLeft) / gW) * 100;
+      const insetTop = ((finalTransform.maskTop! - gTop) / gH) * 100;
+      const insetRight = 100 - (((finalTransform.maskLeft! + finalTransform.maskWidth) - gLeft) / gW) * 100;
+      const insetBottom = 100 - (((finalTransform.maskTop! + finalTransform.maskHeight) - gTop) / gH) * 100;
+
+      clipPath = `inset(${Math.max(0, insetTop)}% ${Math.max(0, insetRight)}% ${Math.max(0, insetBottom)}% ${Math.max(0, insetLeft)}%)`;
+    }
+
+    return {
+      position: 'absolute' as const,
+      width: `${width}px`,
+      height: `${height}px`,
+      transform: `
+        translate(${offsetX}px, ${offsetY}px) 
+        rotate(${finalTransform.rotation}deg) 
+        scale(${finalTransform.flipX ? -1 : 1}, ${finalTransform.flipY ? -1 : 1})
+      `,
+      visibility: 'visible' as const,
+      opacity: finalTransform.opacity ?? 1,
+      clipPath,
+      imageRendering: 'crisp-edges' as const,
+      transformOrigin: 'center center'
+    };
+  };
 
   return (
     <motion.div
@@ -61,21 +113,7 @@ const PersonaLayer: React.FC<PersonaLayerProps> = ({
         src={imageUrl} 
         alt={alt}
         className="pointer-events-none absolute"
-        style={finalTransform ? {
-          transform: `translate(${finalTransform.x * viewScale}px, ${finalTransform.y * viewScale}px) rotate(${finalTransform.rotation}deg) scale(${finalTransform.scale})`,
-          width: finalTransform.width ? `${finalTransform.width * viewScale}px` : 'auto',
-          height: finalTransform.height ? `${finalTransform.height * viewScale}px` : 'auto',
-          maxWidth: 'none',
-          maxHeight: 'none',
-          visibility: 'visible',
-          opacity: 1
-        } : {
-          height: '100%',
-          width: 'auto',
-          objectFit: 'contain',
-          visibility: 'visible',
-          opacity: 1
-        }}
+        style={getStyle()}
       />
     </motion.div>
   );

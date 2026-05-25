@@ -29,12 +29,13 @@
 
 ### 4. Clothing Management (Virtual Closet)
 - **Entity**: `ClothingItem` with fields for `name`, `description`, `category` (Enum), and `imageUrl`.
+- **Advanced Metadata**: Augmented with `ClothingTransform` and `PersonaType` (Gender) fields to support precision studio fitting.
 - **Endpoints**:
     - `POST /api/clothing`: Create a new item (automatically linked to authenticated user).
-    - `GET /api/clothing`: List all items owned by the authenticated user.
-    - `PUT /api/clothing/{id}`: Update an existing item's details.
+    - `GET /api/clothing`: List all items owned by the authenticated user (context-aware gender filtering handled by frontend).
+    - `PUT /api/clothing/{id}`: Update an existing item's details and transform data.
     - `DELETE /api/clothing/{id}`: Delete an item (with ownership verification).
-- **Categories**: `TOP`, `BOTTOM`, `SHOES`, `ACCESSORY`, `JACKET`.
+- **Categories**: `TOP`, `BOTTOM`, `SHOES`, `DRESS`, `JACKET` (Accessory deactivated in current UI cycle).
 
 ### 5. Outfit System (Evolution)
 - **Entities**: `Outfit` and `OutfitItem` (Junction table).

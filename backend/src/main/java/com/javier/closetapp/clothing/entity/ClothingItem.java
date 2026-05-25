@@ -47,6 +47,12 @@ public class ClothingItem {
     @Column(name = "transform_scale")
     private Double transformScale = 1.0;
 
+    @Column(name = "transform_scale_x")
+    private Double transformScaleX = 1.0;
+
+    @Column(name = "transform_scale_y")
+    private Double transformScaleY = 1.0;
+
     @Column(name = "transform_rotation")
     private Double transformRotation = 0.0;
 
@@ -55,6 +61,27 @@ public class ClothingItem {
 
     @Column(name = "transform_height")
     private Double transformHeight;
+
+    @Column(name = "transform_opacity")
+    private Double transformOpacity = 1.0;
+
+    @Column(name = "transform_flip_x")
+    private Boolean transformFlipX = false;
+
+    @Column(name = "transform_flip_y")
+    private Boolean transformFlipY = false;
+
+    @Column(name = "mask_top")
+    private Double maskTop;
+
+    @Column(name = "mask_left")
+    private Double maskLeft;
+
+    @Column(name = "mask_width")
+    private Double maskWidth;
+
+    @Column(name = "mask_height")
+    private Double maskHeight;
 
     @Column(name = "is_active")
     private Boolean isActive = true;
@@ -175,6 +202,78 @@ public class ClothingItem {
 
     public void setTransformHeight(Double transformHeight) {
         this.transformHeight = transformHeight;
+    }
+
+    public Double getTransformScaleX() {
+        return transformScaleX;
+    }
+
+    public void setTransformScaleX(Double transformScaleX) {
+        this.transformScaleX = transformScaleX;
+    }
+
+    public Double getTransformScaleY() {
+        return transformScaleY;
+    }
+
+    public void setTransformScaleY(Double transformScaleY) {
+        this.transformScaleY = transformScaleY;
+    }
+
+    public Double getTransformOpacity() {
+        return transformOpacity;
+    }
+
+    public void setTransformOpacity(Double transformOpacity) {
+        this.transformOpacity = transformOpacity;
+    }
+
+    public Boolean getTransformFlipX() {
+        return transformFlipX;
+    }
+
+    public void setTransformFlipX(Boolean transformFlipX) {
+        this.transformFlipX = transformFlipX;
+    }
+
+    public Boolean getTransformFlipY() {
+        return transformFlipY;
+    }
+
+    public void setTransformFlipY(Boolean transformFlipY) {
+        this.transformFlipY = transformFlipY;
+    }
+
+    public Double getMaskTop() {
+        return maskTop;
+    }
+
+    public void setMaskTop(Double maskTop) {
+        this.maskTop = maskTop;
+    }
+
+    public Double getMaskLeft() {
+        return maskLeft;
+    }
+
+    public void setMaskLeft(Double maskLeft) {
+        this.maskLeft = maskLeft;
+    }
+
+    public Double getMaskWidth() {
+        return maskWidth;
+    }
+
+    public void setMaskWidth(Double maskWidth) {
+        this.maskWidth = maskWidth;
+    }
+
+    public Double getMaskHeight() {
+        return maskHeight;
+    }
+
+    public void setMaskHeight(Double maskHeight) {
+        this.maskHeight = maskHeight;
     }
 
     public LocalDateTime getCreatedAt() {

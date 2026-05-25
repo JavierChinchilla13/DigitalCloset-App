@@ -45,9 +45,18 @@ public class ClothingService {
             item.setTransformX(request.getTransform().getX());
             item.setTransformY(request.getTransform().getY());
             item.setTransformScale(request.getTransform().getScale());
+            item.setTransformScaleX(request.getTransform().getScaleX());
+            item.setTransformScaleY(request.getTransform().getScaleY());
             item.setTransformRotation(request.getTransform().getRotation());
             item.setTransformWidth(request.getTransform().getWidth());
             item.setTransformHeight(request.getTransform().getHeight());
+            item.setTransformOpacity(request.getTransform().getOpacity());
+            item.setTransformFlipX(request.getTransform().getFlipX());
+            item.setTransformFlipY(request.getTransform().getFlipY());
+            item.setMaskTop(request.getTransform().getMaskTop());
+            item.setMaskLeft(request.getTransform().getMaskLeft());
+            item.setMaskWidth(request.getTransform().getMaskWidth());
+            item.setMaskHeight(request.getTransform().getMaskHeight());
         }
         
         item.setOwner(user);
@@ -92,9 +101,18 @@ public class ClothingService {
             item.setTransformX(request.getTransform().getX());
             item.setTransformY(request.getTransform().getY());
             item.setTransformScale(request.getTransform().getScale());
+            item.setTransformScaleX(request.getTransform().getScaleX());
+            item.setTransformScaleY(request.getTransform().getScaleY());
             item.setTransformRotation(request.getTransform().getRotation());
             item.setTransformWidth(request.getTransform().getWidth());
             item.setTransformHeight(request.getTransform().getHeight());
+            item.setTransformOpacity(request.getTransform().getOpacity());
+            item.setTransformFlipX(request.getTransform().getFlipX());
+            item.setTransformFlipY(request.getTransform().getFlipY());
+            item.setMaskTop(request.getTransform().getMaskTop());
+            item.setMaskLeft(request.getTransform().getMaskLeft());
+            item.setMaskWidth(request.getTransform().getMaskWidth());
+            item.setMaskHeight(request.getTransform().getMaskHeight());
         }
 
         ClothingItem updated = clothingRepository.save(item);
@@ -129,6 +147,15 @@ public class ClothingService {
                 item.getTransformWidth(),
                 item.getTransformHeight()
         );
+        transform.setScaleX(item.getTransformScaleX());
+        transform.setScaleY(item.getTransformScaleY());
+        transform.setOpacity(item.getTransformOpacity());
+        transform.setFlipX(item.getTransformFlipX());
+        transform.setFlipY(item.getTransformFlipY());
+        transform.setMaskTop(item.getMaskTop());
+        transform.setMaskLeft(item.getMaskLeft());
+        transform.setMaskWidth(item.getMaskWidth());
+        transform.setMaskHeight(item.getMaskHeight());
 
         return new ClothingResponse(
                 item.getItemId(),
