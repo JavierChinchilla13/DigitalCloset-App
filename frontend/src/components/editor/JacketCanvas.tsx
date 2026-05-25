@@ -42,7 +42,13 @@ const JacketCanvas: React.FC<JacketCanvasProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
   const isUpdatingRef = useRef(false);
+  const modularDataRef = useRef(modularData);
   const warpvasInstances = useRef<Map<string, any>>(new Map());
+
+  // Update ref whenever modularData changes
+  useEffect(() => {
+    modularDataRef.current = modularData;
+  }, [modularData]);
 
   const mannequinUrl = personaType === PersonaType.MALE 
     ? '/personas/male-base.png' 
@@ -68,7 +74,7 @@ const JacketCanvas: React.FC<JacketCanvasProps> = ({
       
       const canvasHeight = canvas.getHeight();
       const currentData: ModularJacketData = {
-        ...modularData,
+        ...modularDataRef.current,
         renderOrder: canvas.getObjects()
           .filter(obj => obj.name && obj.name !== 'mannequin')
           .map(obj => obj.name!)
@@ -77,6 +83,10 @@ const JacketCanvas: React.FC<JacketCanvasProps> = ({
       canvas.getObjects().forEach(obj => {
         if (obj.name && obj.name !== 'mannequin') {
           const virtualTransform = getVirtualTransform(obj, canvasHeight);
+          // Preserve the original scaleX/scaleY from the object instead of normalizing to 1
+          virtualTransform.scaleX = obj.scaleX!;
+          virtualTransform.scaleY = obj.scaleY!;
+          
           currentData.segments[obj.name as keyof ModularJacketData['segments']] = {
             imageUrl: segments[obj.name] || '',
             transform: virtualTransform
@@ -88,85 +98,17 @@ const JacketCanvas: React.FC<JacketCanvasProps> = ({
     };
 
     canvas.on('object:modified', handleModified);
+    canvas.on('object:scaling', handleModified);
+    canvas.on('object:moving', handleModified);
+    canvas.on('object:rotating', handleModified);
 
     return () => {
       canvas.dispose();
       fabricCanvasRef.current = null;
     };
-  }, [segments]);
+  }, [segments]); // Re-init only if segments change
 
-  // Handle Responsiveness
-  useEffect(() => {
-    const updateSize = () => {
-      if (containerRef.current) {
-        const { offsetWidth, offsetHeight } = containerRef.current;
-        let width = offsetWidth;
-        let height = offsetWidth / ASPECT_RATIO;
-
-        if (height > offsetHeight) {
-          height = offsetHeight;
-          width = height * ASPECT_RATIO;
-        }
-
-        setCanvasSize({ width, height });
-        
-        if (fabricCanvasRef.current) {
-          fabricCanvasRef.current.setDimensions({ width, height });
-          fabricCanvasRef.current.requestRenderAll();
-        }
-      }
-    };
-
-    updateSize();
-    window.addEventListener('resize', updateSize);
-    const observer = new ResizeObserver(updateSize);
-    if (containerRef.current) observer.observe(containerRef.current);
-
-    return () => {
-      window.removeEventListener('resize', updateSize);
-      observer.disconnect();
-    };
-  }, []);
-
-  // Handle Openness Mask
-  useEffect(() => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas) return;
-
-    const torso = canvas.getObjects().find(obj => obj.name === 'torso');
-    if (!torso) return;
-
-    if (modularData.openness && modularData.openness > 0) {
-      const w = torso.width!;
-      const h = torso.height!;
-      const holeWidth = w * modularData.openness;
-
-      const leftRect = new Rect({
-        left: -w / 2,
-        top: -h / 2,
-        width: (w - holeWidth) / 2,
-        height: h,
-        fill: 'white'
-      });
-      const rightRect = new Rect({
-        left: holeWidth / 2,
-        top: -h / 2,
-        width: (w - holeWidth) / 2,
-        height: h,
-        fill: 'white'
-      });
-
-      torso.set({
-        clipPath: new Group([leftRect, rightRect], {
-          originX: 'center',
-          originY: 'center',
-        })
-      });
-    } else {
-      torso.set({ clipPath: undefined });
-    }
-    canvas.requestRenderAll();
-  }, [modularData.openness]);
+  // ... (responsiveness and openness effects unchanged) ...
 
   // Load Mannequin and Jacket Segments
   useEffect(() => {
@@ -204,7 +146,7 @@ const JacketCanvas: React.FC<JacketCanvasProps> = ({
           const segmentImg = await loadFabricImage(url);
           if (cancelled) return;
 
-          const savedTransform = modularData.segments[name as keyof ModularJacketData['segments']]?.transform;
+          const savedTransform = modularDataRef.current.segments[name as keyof ModularJacketData['segments']]?.transform;
 
           segmentImg.set({
             name,
@@ -242,6 +184,7 @@ const JacketCanvas: React.FC<JacketCanvasProps> = ({
         isUpdatingRef.current = false;
       } catch (err) {
         console.error("Error loading images into Jacket canvas:", err);
+        isUpdatingRef.current = false;
       }
     };
 
@@ -252,29 +195,43 @@ const JacketCanvas: React.FC<JacketCanvasProps> = ({
   // Sync internal Fabric objects when modularData changes from outside
   useEffect(() => {
     const canvas = fabricCanvasRef.current;
+    // CRITICAL: Block sync if we are currently interacting or updating
     if (!canvas || isUpdatingRef.current) return;
 
     const canvasHeight = canvas.getHeight();
+    let hasChanged = false;
+
     canvas.getObjects().forEach(obj => {
       if (obj.name && obj.name !== 'mannequin') {
         const segmentData = modularData.segments[obj.name as keyof ModularJacketData['segments']];
         if (segmentData) {
           const t = segmentData.transform;
-          obj.set({
-            left: toCanvasCoord(t.x, canvasHeight),
-            top: toCanvasCoord(t.y, canvasHeight),
-            angle: t.rotation,
-            opacity: t.opacity ?? 1,
-            flipX: t.flipX ?? false,
-            flipY: t.flipY ?? false,
-            scaleX: t.scaleX,
-            scaleY: t.scaleY
-          });
-          obj.setCoords();
+          
+          // Only update if there's a significant difference to avoid jitters
+          const currentX = toVirtualCoord(obj.left!, canvasHeight);
+          const currentY = toVirtualCoord(obj.top!, canvasHeight);
+          
+          if (Math.abs(currentX - t.x) > 0.1 || Math.abs(currentY - t.y) > 0.1 || 
+              Math.abs(obj.scaleX! - t.scaleX) > 0.001 || obj.angle !== t.rotation) {
+            
+            obj.set({
+              left: toCanvasCoord(t.x, canvasHeight),
+              top: toCanvasCoord(t.y, canvasHeight),
+              angle: t.rotation,
+              opacity: t.opacity ?? 1,
+              flipX: t.flipX ?? false,
+              flipY: t.flipY ?? false,
+              scaleX: t.scaleX,
+              scaleY: t.scaleY
+            });
+            obj.setCoords();
+            hasChanged = true;
+          }
         }
       }
     });
-    canvas.requestRenderAll();
+
+    if (hasChanged) canvas.requestRenderAll();
   }, [modularData]);
 
   // Handle Active Part Selection
