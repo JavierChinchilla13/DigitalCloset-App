@@ -17,6 +17,7 @@ class SegmentationService {
       }) as ImageSegmentationPipeline;
     } catch (err) {
       console.warn("WebGPU not available, falling back to WASM/CPU", err);
+      // Increased timeout for model loading
       this.segmenter = await pipeline('image-segmentation', this.modelName) as ImageSegmentationPipeline;
     }
   }
@@ -32,8 +33,10 @@ class SegmentationService {
       source = imageSource;
     }
 
-    const output = await this.segmenter(source);
-    return this.processOutput(output, source);
+    // Ensure the image is fully loaded before segmentation
+    const img = await this.loadImage(source);
+    const output = await this.segmenter(img);
+    return this.processOutput(output, img);
   }
 
   private async processOutput(output: ImageSegmentationOutput, originalSource: string | HTMLImageElement): Promise<Map<string, Blob>> {

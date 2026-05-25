@@ -182,7 +182,10 @@ const JacketCanvas: React.FC<JacketCanvasProps> = ({
             flipY: savedTransform?.flipY ?? false,
             objectCaching: false,
             uniformScaling: false,
-            selectable: name === activePart
+            selectable: true, // Always selectable to allow free movement
+            hasControls: name === activePart, // Only show handles for the active part
+            stroke: name === activePart ? '#5B8CFF' : undefined,
+            strokeWidth: name === activePart ? 2 : 0
           });
 
           const virtualWidth = savedTransform?.width || 350;
@@ -246,16 +249,20 @@ const JacketCanvas: React.FC<JacketCanvasProps> = ({
 
     canvas.getObjects().forEach(obj => {
       if (obj.name && obj.name !== 'mannequin') {
+        const isActive = obj.name === activePart;
         obj.set({ 
-          selectable: obj.name === activePart,
-          stroke: obj.name === activePart ? '#5B8CFF' : undefined,
-          strokeWidth: obj.name === activePart ? 2 : 0
+          selectable: true, // Always allow selection
+          hasControls: isActive, // Only show handles for the active part
+          stroke: isActive ? '#5B8CFF' : undefined,
+          strokeWidth: isActive ? 2 : 0
         });
       }
     });
 
     const activeObj = canvas.getObjects().find(obj => obj.name === activePart);
-    if (activeObj) canvas.setActiveObject(activeObj);
+    if (activeObj) {
+      canvas.setActiveObject(activeObj);
+    }
     
     canvas.requestRenderAll();
   }, [activePart]);
