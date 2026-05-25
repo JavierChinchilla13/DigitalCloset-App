@@ -226,7 +226,8 @@ const ClothingCanvas: React.FC<ClothingCanvasProps> = ({
           opacity: transform.opacity ?? 1,
           flipX: transform.flipX ?? false,
           flipY: transform.flipY ?? false,
-          objectCaching: false
+          objectCaching: false,
+          uniformScaling: false
         });
 
         // Apply scale based on absolute virtual width
@@ -282,15 +283,26 @@ const ClothingCanvas: React.FC<ClothingCanvasProps> = ({
         flipY: transform.flipY ?? false,
       });
 
-      if (transform.width) {
-        garment.scaleToWidth(toCanvasCoord(transform.width, canvasHeight));
+      if (transform.width && transform.height) {
+        const targetWidth = toCanvasCoord(transform.width, canvasHeight);
+        const targetHeight = toCanvasCoord(transform.height, canvasHeight);
+        
+        // Calculate required scales based on base image dimensions
+        // fabric image scaleX = targetWidth / baseWidth
+        const baseWidth = garment.getOriginalSize().width;
+        const baseHeight = garment.getOriginalSize().height;
+        
+        garment.set({
+          scaleX: targetWidth / baseWidth,
+          scaleY: targetHeight / baseHeight
+        });
       }
 
       garment.setCoords();
       canvas.requestRenderAll();
       isUpdatingRef.current = false;
     }
-  }, [transform.x, transform.y, transform.width, transform.rotation, transform.opacity, transform.flipX, transform.flipY]);
+  }, [transform.x, transform.y, transform.width, transform.height, transform.rotation, transform.opacity, transform.flipX, transform.flipY]);
 
   return (
     <div 

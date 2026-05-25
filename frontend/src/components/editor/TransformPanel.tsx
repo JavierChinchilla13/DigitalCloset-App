@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   RotateCw, 
   Maximize, 
@@ -8,7 +8,11 @@ import {
   FlipVertical,
   Undo2,
   Trash2,
-  Crop
+  Crop,
+  Lock,
+  Unlock,
+  ArrowUpDown,
+  ArrowLeftRight
 } from 'lucide-react';
 import type { ClothingTransform } from '../../types';
 
@@ -23,6 +27,8 @@ const TransformPanel: React.FC<TransformPanelProps> = ({
   onTransformChange, 
   onReset 
 }) => {
+  const [isLocked, setIsLocked] = useState(true);
+
   const Slider = ({ 
     label, 
     value, 
@@ -64,19 +70,55 @@ const TransformPanel: React.FC<TransformPanelProps> = ({
     <div className="flex flex-col gap-10">
       {/* Transformation Sliders */}
       <div className="space-y-8">
-        <Slider 
-          label="Sizing" 
-          icon={Maximize}
-          value={transform.width || 450} 
-          min={50} 
-          max={1000} 
-          step={1} 
-          onChange={(val) => {
-            const ratio = (transform.height || 450) / (transform.width || 450);
-            onTransformChange({ width: val, height: val * ratio });
-          }} 
-        />
+        <div className="flex items-center justify-between px-1">
+          <p className="text-[9px] font-black text-text-secondary uppercase tracking-[0.3em]">Proportions</p>
+          <button 
+            onClick={() => setIsLocked(!isLocked)}
+            className={`p-2 rounded-lg transition-all ${isLocked ? 'bg-accent/20 text-accent' : 'bg-white/5 text-text-secondary hover:text-white'}`}
+            title={isLocked ? "Unlock Aspect Ratio" : "Lock Aspect Ratio"}
+          >
+            {isLocked ? <Lock size={12} /> : <Unlock size={12} />}
+          </button>
+        </div>
+
+        <div className="space-y-8">
+          <Slider 
+            label="Width" 
+            icon={ArrowLeftRight}
+            value={transform.width || 450} 
+            min={50} 
+            max={1000} 
+            step={1} 
+            onChange={(val) => {
+              if (isLocked) {
+                const ratio = (transform.height || 450) / (transform.width || 450);
+                onTransformChange({ width: val, height: val * ratio });
+              } else {
+                onTransformChange({ width: val });
+              }
+            }} 
+          />
+          
+          <Slider 
+            label="Height" 
+            icon={ArrowUpDown}
+            value={transform.height || 450} 
+            min={50} 
+            max={1000} 
+            step={1} 
+            onChange={(val) => {
+              if (isLocked) {
+                const ratio = (transform.width || 450) / (transform.height || 450);
+                onTransformChange({ height: val, width: val * ratio });
+              } else {
+                onTransformChange({ height: val });
+              }
+            }} 
+          />
+        </div>
         
+        <div className="h-px bg-white/5" />
+
         <Slider 
           label="Rotation" 
           icon={RotateCw}

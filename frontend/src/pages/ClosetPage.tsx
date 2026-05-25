@@ -1,16 +1,18 @@
-import React, { useEffect, useState, useMemo } from 'react';
 import { 
   Plus, 
   Search, 
   Star, 
   Loader2, 
   Shirt, 
-  ChevronLeft
+  ChevronLeft,
+  Users,
+  User,
+  UserCircle
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useClothingStore } from '../store/useClothingStore';
 import { usePersonaStore } from '../store/usePersonaStore';
-import { ClothingCategory } from '../types';
+import { ClothingCategory, PersonaType } from '../types';
 import type { ClothingItem } from '../types';
 import ClothingCard from '../components/ClothingCard';
 import SectionWrapper from '../components/SectionWrapper';
@@ -26,6 +28,7 @@ const ClosetPage = () => {
   
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState<string>('ALL');
+  const [activePersonaFilter, setActivePersonaFilter] = useState<string>('ALL');
   const [showOnlyFavorites, setShowOnlyFavorites] = useState(false);
   
   // Modal States
@@ -59,12 +62,15 @@ const ClosetPage = () => {
       const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesCategory = activeCategory === 'ALL' || item.category === activeCategory;
       const matchesFavorite = !showOnlyFavorites || item.isFavorite;
-      const matchesGender = !item.personaType || item.personaType === persona.type;
-      return matchesSearch && matchesCategory && matchesFavorite && matchesGender;
+      
+      const matchesPersonaFilter = activePersonaFilter === 'ALL' || item.personaType === activePersonaFilter;
+      
+      return matchesSearch && matchesCategory && matchesFavorite && matchesPersonaFilter;
     });
-  }, [items, searchQuery, activeCategory, showOnlyFavorites, persona.type]);
+  }, [items, searchQuery, activeCategory, showOnlyFavorites, activePersonaFilter]);
 
   const categories = ['ALL', ...Object.values(ClothingCategory).filter(cat => cat !== ClothingCategory.ACCESSORY)];
+  const personaFilters = ['ALL', ...Object.values(PersonaType)];
 
   return (
     <div className="min-h-screen bg-background-main pt-24 pb-20">
@@ -82,9 +88,18 @@ const ClosetPage = () => {
             <h1 className="text-6xl font-light tracking-tighter text-white uppercase leading-none">
               DIGITAL <br /> <span className="text-accent">CLOSET</span>
             </h1>
-            <p className="text-text-secondary text-xs font-medium max-w-md uppercase tracking-widest opacity-40">
-              Complete Wardrobe Management // {items.length} Unique Pieces
-            </p>
+            <div className="flex items-center gap-4 pt-2">
+              <p className="text-text-secondary text-xs font-medium uppercase tracking-widest opacity-40">
+                Complete Wardrobe Management // {items.length} Unique Pieces
+              </p>
+              <div className="h-4 w-px bg-white/10" />
+              <div className="flex items-center gap-2 px-3 py-1 bg-accent/10 border border-accent/20 rounded-full">
+                <div className={`w-1.5 h-1.5 rounded-full ${persona.type === PersonaType.MALE ? 'bg-blue-400' : 'bg-rose-400'} animate-pulse`} />
+                <span className="text-[8px] font-black uppercase tracking-widest text-accent">
+                  Active Persona: {persona.type}
+                </span>
+              </div>
+            </div>
           </div>
 
           <button 
@@ -97,49 +112,76 @@ const ClosetPage = () => {
         </div>
 
         {/* Filters & Search Bar */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-12">
-          <div className="lg:col-span-2 relative group">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary group-focus-within:text-accent transition-colors" size={18} />
-            <input 
-              type="text"
-              placeholder="SEARCH YOUR COLLECTION..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-6 text-white text-[10px] font-black tracking-widest focus:outline-none focus:border-accent/50 focus:bg-white/[0.08] transition-all"
-            />
+        <div className="flex flex-col gap-6 mb-12">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <div className="lg:col-span-2 relative group">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary group-focus-within:text-accent transition-colors" size={18} />
+              <input 
+                type="text"
+                placeholder="SEARCH YOUR COLLECTION..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-6 text-white text-[10px] font-black tracking-widest focus:outline-none focus:border-accent/50 focus:bg-white/[0.08] transition-all"
+              />
+            </div>
+
+            <div className="flex justify-center gap-2 overflow-x-auto no-scrollbar pb-2 lg:pb-0">
+              {categories.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setActiveCategory(cat)}
+                  className={`
+                    flex-shrink-0 px-6 rounded-2xl text-[9px] font-black uppercase tracking-widest transition-all border
+                    ${activeCategory === cat 
+                      ? 'bg-accent text-white border-accent shadow-lg shadow-accent/20' 
+                      : 'bg-white/5 text-text-secondary border-white/5 hover:border-white/20'
+                    }
+                  `}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+
+            <button
+              onClick={() => setShowOnlyFavorites(!showOnlyFavorites)}
+              className={`
+                flex items-center justify-center gap-3 px-6 py-4 rounded-2xl text-[9px] font-black uppercase tracking-widest transition-all border
+                ${showOnlyFavorites 
+                  ? 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20' 
+                  : 'bg-white/5 text-text-secondary border-white/5 hover:border-white/20'
+                }
+              `}
+            >
+              <Star size={16} fill={showOnlyFavorites ? "currentColor" : "none"} />
+              Favorites Only
+            </button>
           </div>
 
-          <div className="flex justify-center gap-2 overflow-x-auto no-scrollbar pb-2 lg:pb-0">
-            {categories.map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setActiveCategory(cat)}
-                className={`
-                  flex-shrink-0 px-6 rounded-2xl text-[9px] font-black uppercase tracking-widest transition-all border
-                  ${activeCategory === cat 
-                    ? 'bg-accent text-white border-accent shadow-lg shadow-accent/20' 
-                    : 'bg-white/5 text-text-secondary border-white/5 hover:border-white/20'
-                  }
-                `}
-              >
-                {cat}
-              </button>
-            ))}
+          {/* Persona Filtering Row */}
+          <div className="flex items-center gap-4 bg-white/[0.02] border border-white/5 p-2 rounded-[2rem] self-center">
+            <div className="px-6 flex items-center gap-2 text-text-secondary border-r border-white/10 mr-2">
+              <Users size={14} className="text-accent" />
+              <span className="text-[8px] font-black uppercase tracking-widest">Persona Filter</span>
+            </div>
+            <div className="flex gap-2">
+              {personaFilters.map((p) => (
+                <button
+                  key={p}
+                  onClick={() => setActivePersonaFilter(p)}
+                  className={`
+                    px-8 py-3 rounded-full text-[8px] font-black uppercase tracking-[0.2em] transition-all
+                    ${activePersonaFilter === p 
+                      ? 'bg-white text-background-main shadow-xl' 
+                      : 'text-text-secondary hover:text-white'
+                    }
+                  `}
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
           </div>
-
-          <button
-            onClick={() => setShowOnlyFavorites(!showOnlyFavorites)}
-            className={`
-              flex items-center justify-center gap-3 px-6 py-4 rounded-2xl text-[9px] font-black uppercase tracking-widest transition-all border
-              ${showOnlyFavorites 
-                ? 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20' 
-                : 'bg-white/5 text-text-secondary border-white/5 hover:border-white/20'
-              }
-            `}
-          >
-            <Star size={16} fill={showOnlyFavorites ? "currentColor" : "none"} />
-            Favorites Only
-          </button>
         </div>
 
         {/* Dense Grid */}
