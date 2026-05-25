@@ -91,6 +91,7 @@ export interface ModularJacketData {
     collar?: { imageUrl: string; transform: ClothingTransform };
   };
   isOpen?: boolean;
+  openness?: number; // 0 to 1, width of center opening
   renderOrder?: string[];
 }
 

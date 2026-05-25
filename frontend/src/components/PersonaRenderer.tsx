@@ -150,7 +150,7 @@ const PersonaRenderer: React.FC<PersonaRendererProps> = ({
               id: `jacket-${item.itemId}-${partName}`,
               imageUrl: segment.imageUrl,
               zIndex: 40 + index + (partIndex * 0.01),
-              transform: segment.transform,
+              transform: { ...segment.transform, openness: modularData.openness },
               category: item.category,
               personaType: persona.type
             });

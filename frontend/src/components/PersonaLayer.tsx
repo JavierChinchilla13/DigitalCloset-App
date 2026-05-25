@@ -93,6 +93,15 @@ const PersonaLayer: React.FC<PersonaLayerProps> = ({
       clipPath = `inset(${Math.max(0, insetTop)}% ${Math.max(0, insetRight)}% ${Math.max(0, insetBottom)}% ${Math.max(0, insetLeft)}%)`;
     }
 
+    // Center Opening Mask (for Jackets)
+    let maskImage = 'none';
+    if (category === ClothingCategory.JACKET && (finalTransform as any).openness) {
+       const openness = (finalTransform as any).openness;
+       const holeStart = (50 - (openness * 100) / 2);
+       const holeEnd = (50 + (openness * 100) / 2);
+       maskImage = `linear-gradient(to right, black 0%, black ${holeStart}%, transparent ${holeStart}%, transparent ${holeEnd}%, black ${holeEnd}%, black 100%)`;
+    }
+
     return {
       position: 'absolute' as const,
       width: `${width}px`,
@@ -105,6 +114,8 @@ const PersonaLayer: React.FC<PersonaLayerProps> = ({
       visibility: 'visible' as const,
       opacity: finalTransform.opacity ?? 1,
       clipPath,
+      WebkitMaskImage: maskImage,
+      maskImage,
       imageRendering: 'crisp-edges' as const,
       transformOrigin: 'center center'
     };

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Canvas, Image as FabricImage, Rect, Object as FabricObject } from 'fabric';
+import { Canvas, Image as FabricImage, Rect, Object as FabricObject, Group } from 'fabric';
 import { PersonaType, ClothingCategory, type ClothingTransform, type ModularJacketData } from '../../types';
 import { 
   VIRTUAL_HEIGHT, 
@@ -57,19 +57,18 @@ const JacketCanvas: React.FC<JacketCanvasProps> = ({
     const canvas = new Canvas(canvasRef.current, {
       backgroundColor: 'transparent',
       preserveObjectStacking: true,
-      selection: false,
+      selection: true,
     });
 
     fabricCanvasRef.current = canvas;
     if (onCanvasReady) onCanvasReady(canvas);
 
-    const handleModified = () => {
+    const handleModified = (e: any) => {
       if (isUpdatingRef.current) return;
       
       const canvasHeight = canvas.getHeight();
       const currentData: ModularJacketData = {
-        segments: { ...modularData.segments },
-        isOpen: modularData.isOpen,
+        ...modularData,
         renderOrder: canvas.getObjects()
           .filter(obj => obj.name && obj.name !== 'mannequin')
           .map(obj => obj.name!)
@@ -89,9 +88,6 @@ const JacketCanvas: React.FC<JacketCanvasProps> = ({
     };
 
     canvas.on('object:modified', handleModified);
-    canvas.on('object:scaling', handleModified);
-    canvas.on('object:moving', handleModified);
-    canvas.on('object:rotating', handleModified);
 
     return () => {
       canvas.dispose();
@@ -131,6 +127,46 @@ const JacketCanvas: React.FC<JacketCanvasProps> = ({
       observer.disconnect();
     };
   }, []);
+
+  // Handle Openness Mask
+  useEffect(() => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
+
+    const torso = canvas.getObjects().find(obj => obj.name === 'torso');
+    if (!torso) return;
+
+    if (modularData.openness && modularData.openness > 0) {
+      const w = torso.width!;
+      const h = torso.height!;
+      const holeWidth = w * modularData.openness;
+
+      const leftRect = new Rect({
+        left: -w / 2,
+        top: -h / 2,
+        width: (w - holeWidth) / 2,
+        height: h,
+        fill: 'white'
+      });
+      const rightRect = new Rect({
+        left: holeWidth / 2,
+        top: -h / 2,
+        width: (w - holeWidth) / 2,
+        height: h,
+        fill: 'white'
+      });
+
+      torso.set({
+        clipPath: new Group([leftRect, rightRect], {
+          originX: 'center',
+          originY: 'center',
+        })
+      });
+    } else {
+      torso.set({ clipPath: undefined });
+    }
+    canvas.requestRenderAll();
+  }, [modularData.openness]);
 
   // Load Mannequin and Jacket Segments
   useEffect(() => {
@@ -181,18 +217,19 @@ const JacketCanvas: React.FC<JacketCanvasProps> = ({
             flipX: savedTransform?.flipX ?? false,
             flipY: savedTransform?.flipY ?? false,
             objectCaching: false,
-            uniformScaling: false,
-            selectable: true, // Always selectable to allow free movement
-            hasControls: name === activePart, // Only show handles for the active part
+            selectable: true,
+            hasControls: name === activePart,
             stroke: name === activePart ? '#5B8CFF' : undefined,
             strokeWidth: name === activePart ? 2 : 0
           });
 
-          const virtualWidth = savedTransform?.width || 350;
-          segmentImg.scaleToWidth(toCanvasCoord(virtualWidth, canvasHeight));
-          
-          if (savedTransform?.height) {
-            segmentImg.set({ scaleY: toCanvasCoord(savedTransform.height, canvasHeight) / segmentImg.getOriginalSize().height });
+          if (savedTransform) {
+             segmentImg.set({
+               scaleX: savedTransform.scaleX,
+               scaleY: savedTransform.scaleY
+             });
+          } else {
+             segmentImg.scaleToWidth(toCanvasCoord(350, canvasHeight));
           }
 
           canvas.add(segmentImg);
@@ -230,11 +267,9 @@ const JacketCanvas: React.FC<JacketCanvasProps> = ({
             opacity: t.opacity ?? 1,
             flipX: t.flipX ?? false,
             flipY: t.flipY ?? false,
+            scaleX: t.scaleX,
+            scaleY: t.scaleY
           });
-
-          if (t.width) obj.scaleToWidth(toCanvasCoord(t.width, canvasHeight));
-          if (t.height) obj.set({ scaleY: toCanvasCoord(t.height, canvasHeight) / obj.getOriginalSize().height });
-
           obj.setCoords();
         }
       }
@@ -251,8 +286,8 @@ const JacketCanvas: React.FC<JacketCanvasProps> = ({
       if (obj.name && obj.name !== 'mannequin') {
         const isActive = obj.name === activePart;
         obj.set({ 
-          selectable: true, // Always allow selection
-          hasControls: isActive, // Only show handles for the active part
+          selectable: true,
+          hasControls: isActive,
           stroke: isActive ? '#5B8CFF' : undefined,
           strokeWidth: isActive ? 2 : 0
         });
