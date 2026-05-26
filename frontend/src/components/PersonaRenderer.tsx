@@ -15,24 +15,24 @@ const PersonaRenderer: React.FC<PersonaRendererProps> = ({
   persona: customPersona,
   className = "h-[600px] md:h-[800px]"
 }) => {
-  const { items, isLoading, fetchItems, _hasHydrated: closetHydrated } = useClothingStore();
-  const { persona: storePersona, _hasHydrated: personaHydrated } = usePersonaStore();
+  const { items, isLoading, fetchItems } = useClothingStore();
+  const { persona: storePersona } = usePersonaStore();
 
   const persona = customPersona || storePersona;
 
-  const isMale = persona.type === PersonaType.MALE;
+  const isMale = persona?.type === PersonaType.MALE;
   const baseImage = isMale ? '/personas/male-base.png' : '/personas/female-base.png';
 
   useEffect(() => {
-    if (closetHydrated && items.length === 0 && !isLoading) {
+    if (items.length === 0 && !isLoading) {
       fetchItems();
     }
-  }, [fetchItems, items.length, isLoading, closetHydrated]);
+  }, [fetchItems, items.length, isLoading]);
 
-  if (!personaHydrated || !closetHydrated) {
+  if (!persona) {
     return (
       <div className={`flex items-center justify-center w-full ${className}`}>
-        <Loader2 className="animate-spin text-accent/20" size={32} />
+        <Loader2 className="animate-spin text-accent" size={32} />
       </div>
     );
   }

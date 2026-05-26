@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Edit2, Trash2, Copy, Play, Calendar, Check, X } from 'lucide-react';
+import { Edit2, Trash2, Copy, Play, Calendar, Check, X, Info, Maximize2 } from 'lucide-react';
 import type { LocalOutfit } from '../store/useLocalOutfitStore';
 import { useLocalOutfitStore } from '../store/useLocalOutfitStore';
 import { usePersonaStore } from '../store/usePersonaStore';
+import { useClothingStore } from '../store/useClothingStore';
 import { useNavigate } from 'react-router-dom';
 import PersonaRenderer from './PersonaRenderer';
 import { PersonaType } from '../types';
@@ -14,7 +15,9 @@ interface OutfitCardProps {
 
 const OutfitCard: React.FC<OutfitCardProps> = ({ outfit }) => {
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showPersona, setShowPersona] = useState(false);
   const { deleteOutfit, duplicateOutfit } = useLocalOutfitStore();
+  const { items: closetItems } = useClothingStore();
   const { updatePersona } = usePersonaStore();
   const navigate = useNavigate();
 
@@ -35,6 +38,21 @@ const OutfitCard: React.FC<OutfitCardProps> = ({ outfit }) => {
     });
   };
 
+  // Find actual item objects to get images
+  const equippedItems = useMemo(() => {
+    const ids = [
+      ...(outfit.items.topIds || []),
+      ...(outfit.items.bottomIds || []),
+      ...(outfit.items.jacketIds || []),
+      ...(outfit.items.accessoryIds || []),
+      ...(outfit.items.dressIds || []),
+      outfit.items.leftShoeId,
+      outfit.items.rightShoeId
+    ].filter(Boolean);
+    
+    return closetItems.filter(item => ids.includes(item.itemId));
+  }, [outfit.items, closetItems]);
+
   const outfitPersona = {
     type: outfit.personaType || PersonaType.MALE,
     ...outfit.items
@@ -50,13 +68,58 @@ const OutfitCard: React.FC<OutfitCardProps> = ({ outfit }) => {
       className="group relative"
     >
       <div className="relative aspect-[3/4] rounded-[2rem] overflow-hidden border border-white/5 bg-background-secondary shadow-xl transition-all group-hover:shadow-accent/5">
-        <div className="w-full h-full scale-[0.6] origin-center translate-y-[-5%] transition-transform duration-700 group-hover:scale-[0.65]">
-           <PersonaRenderer persona={outfitPersona} className="h-full" />
+        
+        {/* Main Content Area */}
+        <div className="w-full h-full p-4 flex flex-col items-center justify-center">
+          <AnimatePresence mode="wait">
+            {!showPersona ? (
+              <motion.div 
+                key="grid"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="grid grid-cols-2 gap-2 w-full h-full"
+              >
+                {equippedItems.slice(0, 4).map((item, idx) => (
+                  <div key={item.itemId} className={`relative rounded-xl overflow-hidden border border-white/5 bg-black/20 ${equippedItems.length === 1 ? 'col-span-2 row-span-2' : ''}`}>
+                    <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
+                    {idx === 3 && equippedItems.length > 4 && (
+                      <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] flex items-center justify-center">
+                        <span className="text-white text-[10px] font-black">+{equippedItems.length - 3}</span>
+                      </div>
+                    )}
+                  </div>
+                ))}
+                {equippedItems.length === 0 && (
+                  <div className="col-span-2 row-span-2 flex items-center justify-center opacity-10">
+                    <Maximize2 size={40} className="text-white" />
+                  </div>
+                )}
+              </motion.div>
+            ) : (
+              <motion.div 
+                key="persona"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="w-full h-full scale-[0.6] origin-center translate-y-[-5%]"
+              >
+                <PersonaRenderer persona={outfitPersona} className="h-full" />
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
         
         {/* Actions Overlay */}
         <div className="absolute inset-0 bg-background-main/60 opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col justify-between p-6 backdrop-blur-[2px]">
           <div className="flex justify-end gap-2">
+            <button 
+              onClick={() => setShowPersona(!showPersona)}
+              className={`p-2.5 rounded-xl transition-all border ${showPersona ? 'bg-accent text-white border-accent' : 'bg-white/5 hover:bg-white/10 text-white border-white/5'}`}
+              title={showPersona ? "Show Items" : "More Info"}
+            >
+              <Info size={14} />
+            </button>
             <button 
               onClick={() => duplicateOutfit(outfit.id)}
               className="p-2.5 bg-white/5 hover:bg-white/10 rounded-xl text-white transition-colors border border-white/5"
@@ -100,19 +163,25 @@ const OutfitCard: React.FC<OutfitCardProps> = ({ outfit }) => {
               exit={{ opacity: 0 }}
               className="absolute inset-0 z-20 bg-rose-950/90 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center"
             >
-              <p className="text-white text-[10px] font-black uppercase tracking-widest mb-4">Confirm Deletion?</p>
-              <div className="flex gap-4">
+              <div className="bg-rose-500/20 p-4 rounded-full mb-4">
+                <Trash2 size={24} className="text-rose-500" />
+              </div>
+              <p className="text-white text-[12px] font-black uppercase tracking-widest mb-2">Delete Outfit?</p>
+              <p className="text-white/60 text-[8px] uppercase tracking-widest mb-6 leading-relaxed">
+                This action is permanent and cannot be undone.
+              </p>
+              <div className="flex gap-4 w-full">
                 <button 
                   onClick={() => deleteOutfit(outfit.id)}
-                  className="w-12 h-12 rounded-full bg-rose-500 text-white flex items-center justify-center shadow-lg"
+                  className="flex-grow py-3 bg-rose-500 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-xl shadow-lg active:scale-95 transition-all"
                 >
-                  <Check size={20} />
+                  DELETE
                 </button>
                 <button 
                   onClick={() => setIsDeleting(false)}
-                  className="w-12 h-12 rounded-full bg-white/10 text-white flex items-center justify-center border border-white/10"
+                  className="flex-grow py-3 bg-white/10 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-xl border border-white/10 active:scale-95 transition-all"
                 >
-                  <X size={20} />
+                  CANCEL
                 </button>
               </div>
             </motion.div>

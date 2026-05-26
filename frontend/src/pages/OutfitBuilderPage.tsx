@@ -85,14 +85,15 @@ const OutfitBuilderPage = () => {
   };
 
   const isEquipped = (itemId: number) => {
+    if (!persona) return false;
     return (
-      persona.topIds.includes(itemId) ||
-      persona.bottomIds.includes(itemId) ||
+      (persona.topIds?.includes(itemId) ?? false) ||
+      (persona.bottomIds?.includes(itemId) ?? false) ||
       persona.leftShoeId === itemId ||
       persona.rightShoeId === itemId ||
-      persona.accessoryIds.includes(itemId) ||
-      persona.jacketIds.includes(itemId) ||
-      persona.dressIds.includes(itemId)
+      (persona.accessoryIds?.includes(itemId) ?? false) ||
+      (persona.jacketIds?.includes(itemId) ?? false) ||
+      (persona.dressIds?.includes(itemId) ?? false)
     );
   };
 

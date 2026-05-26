@@ -16,11 +16,12 @@ const AvatarSection = () => {
   const [saveSuccess, setSaveSuccess] = useState(false);
 
   const handleSaveOutfit = async () => {
+    if (!persona) return;
     setIsSaving(true);
 
     const previewImage =
-      items.find((i) => persona.topIds.includes(i.itemId))?.imageUrl ||
-      items.find((i) => persona.bottomIds.includes(i.itemId))?.imageUrl ||
+      items.find((i) => persona.topIds?.includes(i.itemId))?.imageUrl ||
+      items.find((i) => persona.bottomIds?.includes(i.itemId))?.imageUrl ||
       items.find((i) => i.itemId === persona.leftShoeId)?.imageUrl ||
       "/personas/male-base.png";
 
@@ -29,13 +30,13 @@ const AvatarSection = () => {
       preview: previewImage,
       personaType: persona.type,
       items: {
-        topIds: persona.topIds,
-        bottomIds: persona.bottomIds,
+        topIds: persona.topIds || [],
+        bottomIds: persona.bottomIds || [],
         leftShoeId: persona.leftShoeId,
         rightShoeId: persona.rightShoeId,
-        accessoryIds: persona.accessoryIds,
-        jacketIds: persona.jacketIds,
-        dressIds: persona.dressIds,
+        accessoryIds: persona.accessoryIds || [],
+        jacketIds: persona.jacketIds || [],
+        dressIds: persona.dressIds || [],
       },
     };
 

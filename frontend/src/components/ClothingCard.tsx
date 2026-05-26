@@ -1,6 +1,6 @@
-import React, { useMemo } from 'react';
-import { motion } from 'framer-motion';
-import { Shirt, Info, Edit2, Trash2, Star } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Shirt, Info, Edit2, Trash2, Star, Check, X } from 'lucide-react';
 import type { ClothingItem } from '../types';
 import { usePersonaStore } from '../store/usePersonaStore';
 import { useClothingStore } from '../store/useClothingStore';
@@ -20,6 +20,7 @@ const ClothingCard: React.FC<ClothingCardProps> = ({
   onDelete,
   showManagement = false
 }) => {
+  const [isDeleting, setIsDeleting] = useState(false);
   const { setEquippedItem, persona } = usePersonaStore();
   const { toggleFavorite } = useClothingStore();
 
@@ -45,6 +46,7 @@ const ClothingCard: React.FC<ClothingCardProps> = ({
 
   const handleEquip = (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (isDeleting) return;
     setEquippedItem(item);
     
     if (!isEquipped) {
@@ -59,6 +61,12 @@ const ClothingCard: React.FC<ClothingCardProps> = ({
   const handleFavorite = (e: React.MouseEvent) => {
     e.stopPropagation();
     toggleFavorite(item.itemId);
+  };
+
+  const handleConfirmDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onDelete(item);
+    setIsDeleting(false);
   };
 
   return (
@@ -123,9 +131,9 @@ const ClothingCard: React.FC<ClothingCardProps> = ({
                 <button 
                   onClick={(e) => {
                     e.stopPropagation();
-                    onDelete(item);
+                    setIsDeleting(true);
                   }}
-                  className="p-2 bg-rose-500/20 hover:bg-rose-500/40 text-rose-400 hover:text-white rounded-lg transition-colors border border-rose-500/20"
+                  className="p-2 bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white rounded-lg transition-all border border-rose-500/10"
                   title="Delete"
                 >
                   <Trash2 size={14} />
@@ -142,6 +150,39 @@ const ClothingCard: React.FC<ClothingCardProps> = ({
             <span>{isEquipped ? 'Equipped' : 'Wear'}</span>
           </div>
         </div>
+
+        {/* Delete Confirmation Overlay */}
+        <AnimatePresence>
+          {isDeleting && (
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="absolute inset-0 z-20 bg-rose-950/90 backdrop-blur-md flex flex-col items-center justify-center p-4 text-center"
+            >
+              <Trash2 size={20} className="text-rose-500 mb-2" />
+              <p className="text-white text-[9px] font-black uppercase tracking-widest mb-4">Permanent Delete?</p>
+              <div className="flex gap-2 w-full">
+                <button 
+                  onClick={handleConfirmDelete}
+                  className="flex-grow py-2 bg-rose-500 text-white text-[8px] font-black uppercase tracking-[0.2em] rounded-lg shadow-lg active:scale-95 transition-all"
+                >
+                  DELETE
+                </button>
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsDeleting(false);
+                  }}
+                  className="flex-grow py-2 bg-white/10 text-white text-[8px] font-black uppercase tracking-[0.2em] rounded-lg border border-white/10 active:scale-95 transition-all"
+                >
+                  CANCEL
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Category Tag (Mini) */}
         <div className="absolute top-2 left-2">

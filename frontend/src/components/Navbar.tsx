@@ -72,7 +72,16 @@ const Navbar = () => {
         {/* Logo */}
         <Link 
           to="/" 
-          onClick={(e) => location.pathname === '/' && handleNavClick(e, { section: 'persona' })}
+          onClick={(e) => {
+            if (location.pathname === '/') {
+              e.preventDefault();
+              const el = document.getElementById('persona');
+              if (el) {
+                el.scrollIntoView({ behavior: 'smooth' });
+                window.history.replaceState(null, '', '/#persona');
+              }
+            }
+          }}
           className="text-xl font-bold tracking-tighter text-white hover:text-accent transition-colors"
         >
           DIGITAL<span className="text-accent">CLOSET</span>

@@ -6,6 +6,8 @@ import {
   ASPECT_RATIO, 
   toCanvasCoord, 
   toVirtualCoord, 
+  toCanvasX,
+  toVirtualX,
   loadFabricImage, 
   centerObject,
   getVirtualTransform

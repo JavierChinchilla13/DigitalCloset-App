@@ -11,10 +11,9 @@ import UploadFlow from '../components/FittingTool/UploadFlow';
 import ClothingCard from '../components/ClothingCard';
 import ClothingDetailsModal from '../components/ClothingDetailsModal';
 import EditClothingModal from '../components/EditClothingModal';
-import DeleteConfirmationModal from '../components/DeleteConfirmationModal';
 
 const ClosetSection = () => {
-  const { items, isLoading, fetchItems } = useClothingStore();
+  const { items, isLoading, fetchItems, removeItem } = useClothingStore();
   const { persona } = usePersonaStore();
   const navigate = useNavigate();
   
@@ -22,7 +21,6 @@ const ClosetSection = () => {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   
   // Selected Item State
   const [selectedItem, setSelectedItem] = useState<ClothingItem | null>(null);
@@ -42,8 +40,7 @@ const ClosetSection = () => {
   };
 
   const handleDelete = (item: ClothingItem) => {
-    setSelectedItem(item);
-    setIsDeleteModalOpen(true);
+    removeItem(item.itemId);
   };
 
   // Filter items by persona gender
@@ -127,6 +124,7 @@ const ClosetSection = () => {
                     onViewDetails={handleViewDetails}
                     onEdit={handleEdit}
                     onDelete={handleDelete}
+                    showManagement={true}
                   />
                 ))}
               </div>
@@ -153,13 +151,6 @@ const ClosetSection = () => {
         item={selectedItem}
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
-      />
-
-      <DeleteConfirmationModal 
-        itemId={selectedItem?.itemId || null}
-        itemName={selectedItem?.name || ''}
-        isOpen={isDeleteModalOpen}
-        onClose={() => setIsDeleteModalOpen(false)}
       />
     </SectionWrapper>
   );
