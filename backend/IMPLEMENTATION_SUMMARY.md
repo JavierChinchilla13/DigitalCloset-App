@@ -71,6 +71,7 @@
 - **Manual POJOs**: I used standard Java Constructors/Getters/Setters instead of Lombok to ensure 100% compatibility with the local Java 21 environment.
 - **Soft Deletes**: Implemented `isActive` flags to preserve data integrity while providing a clean user experience.
 - **Transactional Consistency**: Garment and user operations use `@Transactional` to ensure data atomicity during complex updates.
+- **Coordinate Precision**: Standardized on center-anchored virtual coordinates with 2-decimal rounding to ensure mathematical parity between localized studio fitting and global dashboard rendering.
 
 ## Phase 10: Hybrid AI Microservice & Professional Tooling Completed
 
@@ -79,6 +80,8 @@
 - **Architecture**: Implemented a hybrid "Provider" pattern where the frontend can fail over to this high-accuracy microservice if client-side AI fails.
 - **Interoperability**: CORS-enabled streaming response that returns transparent PNGs directly to the React application.
 
-### 2. Intelligent Data Preservation
-- **Non-Destructive Workflows**: Refactored the garment saving logic to preserve manually cleaned assets.
-- **Enhanced Metadata**: Jacket items now store both the high-quality source image and complex modular segment data for the fitting studio.
+### 2. Studio-Grade Data Preservation
+- **Non-Destructive Workflows**: Refactored the garment saving logic to preserve manually cleaned assets while maintaining modular segment identifiers.
+- **High-Fidelity Metadata**: Jacket items now store complex synchronized transform data (scale, rotation, offsets) ensuring that modular parts remain "attached" during global ensemble transformations.
+- **Thumbnail Optimization**: Implemented selective visibility during asset initialization to generate clean, mannequin-free thumbnails for the digital closet.
+
