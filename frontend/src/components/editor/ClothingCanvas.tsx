@@ -58,7 +58,7 @@ const ClothingCanvas: React.FC<ClothingCanvasProps> = ({
     const handleModified = () => {
       const activeObject = canvas.getActiveObject();
       if (activeObject && activeObject.name === 'garment' && !isUpdatingRef.current) {
-        const virtualTransform = getVirtualTransform(activeObject, canvas.getHeight());
+        const virtualTransform = getVirtualTransform(activeObject, canvas.getWidth(), canvas.getHeight());
         onTransformChange({
           ...transform,
           ...virtualTransform,
@@ -213,6 +213,7 @@ const ClothingCanvas: React.FC<ClothingCanvasProps> = ({
         canvas.add(mannequin);
         canvas.sendObjectToBack(mannequin);
 
+        const canvasWidth = canvas.getWidth();
         const canvasHeight = canvas.getHeight();
         
         // Setup Garment
@@ -220,7 +221,7 @@ const ClothingCanvas: React.FC<ClothingCanvasProps> = ({
           name: 'garment',
           originX: 'center',
           originY: 'center',
-          left: toCanvasCoord(transform.x, canvasHeight),
+          left: toCanvasX(transform.x, canvasWidth, canvasHeight),
           top: toCanvasCoord(transform.y, canvasHeight),
           angle: transform.rotation,
           opacity: transform.opacity ?? 1,
@@ -240,7 +241,7 @@ const ClothingCanvas: React.FC<ClothingCanvasProps> = ({
         if (transform.maskWidth && transform.maskHeight) {
           garment.set({
             clipPath: new Rect({
-              left: toCanvasCoord(transform.maskLeft!, canvasHeight),
+              left: toCanvasX(transform.maskLeft!, canvasWidth, canvasHeight),
               top: toCanvasCoord(transform.maskTop!, canvasHeight),
               width: toCanvasCoord(transform.maskWidth, canvasHeight),
               height: toCanvasCoord(transform.maskHeight, canvasHeight),
@@ -272,10 +273,11 @@ const ClothingCanvas: React.FC<ClothingCanvasProps> = ({
     const garment = canvas.getObjects().find(obj => obj.name === 'garment');
     if (garment) {
       isUpdatingRef.current = true;
+      const canvasWidth = canvas.getWidth();
       const canvasHeight = canvas.getHeight();
 
       garment.set({
-        left: toCanvasCoord(transform.x, canvasHeight),
+        left: toCanvasX(transform.x, canvasWidth, canvasHeight),
         top: toCanvasCoord(transform.y, canvasHeight),
         angle: transform.rotation,
         opacity: transform.opacity ?? 1,

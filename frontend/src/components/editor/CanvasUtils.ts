@@ -9,6 +9,24 @@ export const ASPECT_RATIO = 3 / 4;
 export const VIRTUAL_WIDTH = VIRTUAL_HEIGHT * ASPECT_RATIO;
 
 /**
+ * Converts virtual X (0-750) to actual canvas pixels, anchored to the center.
+ */
+export const toCanvasX = (virtualX: number, canvasWidth: number, canvasHeight: number) => {
+  const centerCanvasX = canvasWidth / 2;
+  const virtualXOffset = virtualX - VIRTUAL_WIDTH / 2;
+  return centerCanvasX + (virtualXOffset * canvasHeight) / VIRTUAL_HEIGHT;
+};
+
+/**
+ * Converts actual canvas X pixels to virtual X (0-750), anchored to the center.
+ */
+export const toVirtualX = (canvasX: number, canvasWidth: number, canvasHeight: number) => {
+  const centerCanvasX = canvasWidth / 2;
+  const canvasXOffset = canvasX - centerCanvasX;
+  return VIRTUAL_WIDTH / 2 + (canvasXOffset * VIRTUAL_HEIGHT) / canvasHeight;
+};
+
+/**
  * Converts virtual units (0-1000) to actual canvas pixels.
  */
 export const toCanvasCoord = (virtualValue: number, canvasHeight: number) => {
@@ -32,12 +50,12 @@ export const loadFabricImage = (url: string): Promise<FabricImage> => {
 /**
  * Gets the current transform data from a Fabric object in absolute virtual units.
  */
-export const getVirtualTransform = (obj: FabricObject, canvasHeight: number) => {
+export const getVirtualTransform = (obj: FabricObject, canvasWidth: number, canvasHeight: number) => {
   const scaledWidth = obj.getScaledWidth();
   const scaledHeight = obj.getScaledHeight();
 
   const transform = {
-    x: toVirtualCoord(obj.left || 0, canvasHeight),
+    x: toVirtualX(obj.left || 0, canvasWidth, canvasHeight),
     y: toVirtualCoord(obj.top || 0, canvasHeight),
     width: toVirtualCoord(scaledWidth, canvasHeight),
     height: toVirtualCoord(scaledHeight, canvasHeight),
@@ -56,7 +74,7 @@ export const getVirtualTransform = (obj: FabricObject, canvasHeight: number) => 
   // Extract absolute mask coordinates if present
   if (obj.clipPath && obj.clipPath.name === 'cropMask') {
     const cp = obj.clipPath as Rect;
-    transform.maskLeft = toVirtualCoord(cp.left!, canvasHeight);
+    transform.maskLeft = toVirtualX(cp.left!, canvasWidth, canvasHeight);
     transform.maskTop = toVirtualCoord(cp.top!, canvasHeight);
     transform.maskWidth = toVirtualCoord(cp.width!, canvasHeight);
     transform.maskHeight = toVirtualCoord(cp.height!, canvasHeight);

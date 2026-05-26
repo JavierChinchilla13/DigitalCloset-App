@@ -65,7 +65,7 @@ const ShoeCanvas: React.FC<ShoeCanvasProps> = ({
       if (activeObject && (activeObject.name === 'leftShoe' || activeObject.name === 'rightShoe') && !isUpdatingRef.current) {
         const side = activeObject.name === 'leftShoe' ? 'left' : 'right';
         const currentBaseTransform = side === 'left' ? leftTransform : rightTransform;
-        const virtualTransform = getVirtualTransform(activeObject, canvas.getHeight());
+        const virtualTransform = getVirtualTransform(activeObject, canvas.getWidth(), canvas.getHeight());
         
         onTransformChange(side, {
           ...currentBaseTransform,
@@ -159,13 +159,14 @@ const ShoeCanvas: React.FC<ShoeCanvasProps> = ({
         canvas.add(mannequin);
         canvas.sendObjectToBack(mannequin);
 
+        const canvasWidth = canvas.getWidth();
         const canvasHeight = canvas.getHeight();
 
         // 2. Setup Foot Indicators
         const indicatorColor = 'rgba(91, 140, 255, 0.4)';
         const createFootIndicator = (x: number, y: number, label: string) => {
           const group = new Rect({
-            left: toCanvasCoord(x, canvasHeight),
+            left: toCanvasX(x, canvasWidth, canvasHeight),
             top: toCanvasCoord(y, canvasHeight),
             width: toCanvasCoord(150, canvasHeight),
             height: toCanvasCoord(60, canvasHeight),
@@ -192,7 +193,7 @@ const ShoeCanvas: React.FC<ShoeCanvasProps> = ({
           name: 'leftShoe',
           originX: 'center',
           originY: 'center',
-          left: toCanvasCoord(leftTransform.x, canvasHeight),
+          left: toCanvasX(leftTransform.x, canvasWidth, canvasHeight),
           top: toCanvasCoord(leftTransform.y, canvasHeight),
           angle: leftTransform.rotation,
           opacity: leftTransform.opacity ?? 1,
@@ -213,7 +214,7 @@ const ShoeCanvas: React.FC<ShoeCanvasProps> = ({
           name: 'rightShoe',
           originX: 'center',
           originY: 'center',
-          left: toCanvasCoord(rightTransform.x, canvasHeight),
+          left: toCanvasX(rightTransform.x, canvasWidth, canvasHeight),
           top: toCanvasCoord(rightTransform.y, canvasHeight),
           angle: rightTransform.rotation,
           opacity: rightTransform.opacity ?? 1,
@@ -249,13 +250,14 @@ const ShoeCanvas: React.FC<ShoeCanvasProps> = ({
 
     const leftObj = canvas.getObjects().find(obj => obj.name === 'leftShoe');
     const rightObj = canvas.getObjects().find(obj => obj.name === 'rightShoe');
+    const canvasWidth = canvas.getWidth();
     const canvasHeight = canvas.getHeight();
 
     isUpdatingRef.current = true;
     
     if (leftObj) {
       leftObj.set({
-        left: toCanvasCoord(leftTransform.x, canvasHeight),
+        left: toCanvasX(leftTransform.x, canvasWidth, canvasHeight),
         top: toCanvasCoord(leftTransform.y, canvasHeight),
         angle: leftTransform.rotation,
         opacity: leftTransform.opacity ?? 1,
@@ -274,7 +276,7 @@ const ShoeCanvas: React.FC<ShoeCanvasProps> = ({
 
     if (rightObj) {
       rightObj.set({
-        left: toCanvasCoord(rightTransform.x, canvasHeight),
+        left: toCanvasX(rightTransform.x, canvasWidth, canvasHeight),
         top: toCanvasCoord(rightTransform.y, canvasHeight),
         angle: rightTransform.rotation,
         opacity: rightTransform.opacity ?? 1,

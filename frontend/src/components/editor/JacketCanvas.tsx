@@ -76,6 +76,7 @@ const JacketCanvas: React.FC<JacketCanvasProps> = ({
       if (isUpdatingRef.current || cancelled) return;
       
       const canvasHeight = canvas.getHeight();
+      const canvasWidth = canvas.getWidth();
       
       // Handle Group Movement if enabled
       if (isGroupMode && e?.target && e.action === 'drag') {
@@ -85,10 +86,10 @@ const JacketCanvas: React.FC<JacketCanvasProps> = ({
         
         canvas.getObjects().forEach(obj => {
           if (obj.name && obj.name !== 'mannequin' && obj !== target) {
-            const currentX = toVirtualCoord(obj.left, canvasHeight);
+            const currentX = toVirtualX(obj.left, canvasWidth, canvasHeight);
             const currentY = toVirtualCoord(obj.top, canvasHeight);
             obj.set({
-              left: toCanvasCoord(currentX + dx, canvasHeight),
+              left: toCanvasX(currentX + dx, canvasWidth, canvasHeight),
               top: toCanvasCoord(currentY + dy, canvasHeight)
             });
             obj.setCoords();
@@ -107,7 +108,7 @@ const JacketCanvas: React.FC<JacketCanvasProps> = ({
         if (obj.name && obj.name !== 'mannequin') {
           currentData.segments[obj.name as keyof ModularJacketData['segments']] = {
             imageUrl: segments[obj.name] || '',
-            transform: getVirtualTransform(obj, canvasHeight)
+            transform: getVirtualTransform(obj, canvasWidth, canvasHeight)
           };
         }
       });
