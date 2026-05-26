@@ -6,6 +6,8 @@ import {
   ASPECT_RATIO, 
   toCanvasCoord, 
   toVirtualCoord, 
+  toCanvasX,
+  toVirtualX,
   loadFabricImage, 
   centerObject,
   getVirtualTransform
@@ -24,6 +26,7 @@ interface JacketCanvasProps {
   modularData: ModularJacketData;
   onDataChange: (data: ModularJacketData) => void;
   onCanvasReady?: (canvas: Canvas) => void;
+  onSelectPart?: (part: string | null) => void;
   activePart?: string;
   isWarpMode?: boolean;
   isGroupMode?: boolean;
@@ -35,6 +38,7 @@ const JacketCanvas: React.FC<JacketCanvasProps> = ({
   modularData,
   onDataChange,
   onCanvasReady,
+  onSelectPart,
   activePart = 'torso',
   isWarpMode = false,
   isGroupMode = false
@@ -47,12 +51,16 @@ const JacketCanvas: React.FC<JacketCanvasProps> = ({
   const isUpdatingRef = useRef(false);
   const isInteractingRef = useRef(false);
   const modularDataRef = useRef(modularData);
+  const isGroupModeRef = useRef(isGroupMode);
+  const activePartRef = useRef(activePart);
   const warpvasInstances = useRef<Map<string, any>>(new Map());
 
-  // Keep ref up to date for event handlers
+  // Keep refs up to date for event handlers
   useEffect(() => {
     modularDataRef.current = modularData;
-  }, [modularData]);
+    isGroupModeRef.current = isGroupMode;
+    activePartRef.current = activePart;
+  }, [modularData, isGroupMode, activePart]);
 
   // Unified Initialization and Loading
   useEffect(() => {
@@ -77,64 +85,125 @@ const JacketCanvas: React.FC<JacketCanvasProps> = ({
       
       const canvasHeight = canvas.getHeight();
       const canvasWidth = canvas.getWidth();
-      
-      // Handle Group Movement if enabled
-      if (isGroupMode && e?.target && e.action === 'drag') {
-        const target = e.target;
-        const dx = toVirtualCoord(target.left - target._stateLeft, canvasHeight);
-        const dy = toVirtualCoord(target.top - target._stateTop, canvasHeight);
+      const target = e?.target;
+
+      // --- Visual Virtual Grouping (Real-time movement, scaling, rotation) ---
+      if (isGroupModeRef.current && target && target.name !== 'mannequin') {
+        // action can be from transform or direct action property
+        const action = e.transform?.action || e.action;
         
-        canvas.getObjects().forEach(obj => {
-          if (obj.name && obj.name !== 'mannequin' && obj !== target) {
-            const currentX = toVirtualX(obj.left, canvasWidth, canvasHeight);
-            const currentY = toVirtualCoord(obj.top, canvasHeight);
-            obj.set({
-              left: toCanvasX(currentX + dx, canvasWidth, canvasHeight),
-              top: toCanvasCoord(currentY + dy, canvasHeight)
+        if (action === 'drag' || action === 'drag-all') {
+          const dx = target.left - (target._lastLeft ?? target.left);
+          const dy = target.top - (target._lastTop ?? target.top);
+
+          canvas.getObjects().forEach(obj => {
+            if (obj.name && obj.name !== 'mannequin' && obj !== target) {
+              obj.set({
+                left: (obj.left || 0) + dx,
+                top: (obj.top || 0) + dy
+              });
+              obj.setCoords();
+            }
+          });
+        } else if (action && (action.includes('scale') || action.includes('resize'))) {
+          // Calculate scale ratio relative to last known state
+          const dsX = target.scaleX / (target._lastScaleX || target.scaleX);
+          const dsY = target.scaleY / (target._lastScaleY || target.scaleY);
+
+          if (Math.abs(dsX - 1) > 0.0001 || Math.abs(dsY - 1) > 0.0001) {
+            canvas.getObjects().forEach(obj => {
+              if (obj.name && obj.name !== 'mannequin' && obj !== target) {
+                // Synchronize scale
+                obj.set({
+                  scaleX: (obj.scaleX || 1) * dsX,
+                  scaleY: (obj.scaleY || 1) * dsY,
+                  // Synchronize position relative to the target's center (originX/Y is center)
+                  left: target.left + (obj.left - target.left) * dsX,
+                  top: target.top + (obj.top - target.top) * dsY
+                });
+                obj.setCoords();
+              }
             });
-            obj.setCoords();
+          }
+        } else if (action === 'rotate') {
+          const da = target.angle - (target._lastAngle ?? target.angle);
+
+          if (Math.abs(da) > 0.0001) {
+            canvas.getObjects().forEach(obj => {
+              if (obj.name && obj.name !== 'mannequin' && obj !== target) {
+                const radians = (da * Math.PI) / 180;
+                const sin = Math.sin(radians);
+                const cos = Math.cos(radians);
+                
+                const rx = obj.left - target.left;
+                const ry = obj.top - target.top;
+                
+                obj.set({
+                  angle: (obj.angle || 0) + da,
+                  left: target.left + (rx * cos - ry * sin),
+                  top: target.top + (rx * sin + ry * cos)
+                });
+                obj.setCoords();
+              }
+            });
+          }
+        }
+        
+        // Update tracking state for next frame
+        target._lastLeft = target.left;
+        target._lastTop = target.top;
+        target._lastScaleX = target.scaleX;
+        target._lastScaleY = target.scaleY;
+        target._lastAngle = target.angle;
+        
+        canvas.requestRenderAll();
+        return;
+      }
+
+      // --- Final State Sync ---
+      if (e.type === 'object:modified' || !isInteractingRef.current) {
+        const currentData: ModularJacketData = {
+          ...modularDataRef.current,
+          renderOrder: canvas.getObjects()
+            .filter(obj => obj.name && obj.name !== 'mannequin')
+            .map(obj => obj.name!)
+        };
+
+        canvas.getObjects().forEach(obj => {
+          if (obj.name && obj.name !== 'mannequin') {
+            currentData.segments[obj.name as keyof ModularJacketData['segments']] = {
+              imageUrl: segments[obj.name] || '',
+              transform: getVirtualTransform(obj, canvasWidth, canvasHeight)
+            };
           }
         });
+
+        onDataChange(currentData);
       }
-
-      const currentData: ModularJacketData = {
-        ...modularDataRef.current,
-        renderOrder: canvas.getObjects()
-          .filter(obj => obj.name && obj.name !== 'mannequin')
-          .map(obj => obj.name!)
-      };
-
-      canvas.getObjects().forEach(obj => {
-        if (obj.name && obj.name !== 'mannequin') {
-          currentData.segments[obj.name as keyof ModularJacketData['segments']] = {
-            imageUrl: segments[obj.name] || '',
-            transform: getVirtualTransform(obj, canvasWidth, canvasHeight)
-          };
-        }
-      });
-
-      onDataChange(currentData);
     };
 
-    // Track interaction to prevent sync loops
-    canvas.on('mouse:down', () => { isInteractingRef.current = true; });
-    canvas.on('mouse:up', () => { isInteractingRef.current = false; });
-    
-    // Store initial state for delta calculation
-    canvas.on('object:moving', (e) => {
-      if (!e.target._stateLeft) {
-        e.target._stateLeft = e.target.left;
-        e.target._stateTop = e.target.top;
+    // Track interaction
+    canvas.on('mouse:down', (e) => { 
+      isInteractingRef.current = true; 
+      const target = e.target;
+      if (target) {
+        target._lastLeft = target.left;
+        target._lastTop = target.top;
+        target._lastScaleX = target.scaleX;
+        target._lastScaleY = target.scaleY;
+        target._lastAngle = target.angle;
       }
-      handleModified(e);
-      // Update state for next move
-      e.target._stateLeft = e.target.left;
-      e.target._stateTop = e.target.top;
     });
 
+    canvas.on('mouse:up', () => { 
+      isInteractingRef.current = false;
+      handleModified({ type: 'object:modified' });
+    });
+    
+    canvas.on('object:moving', (e) => handleModified({ ...e, action: 'drag', type: 'object:moving' }));
+    canvas.on('object:scaling', (e) => handleModified({ ...e, action: 'scale', type: 'object:scaling' }));
+    canvas.on('object:rotating', (e) => handleModified({ ...e, action: 'rotate', type: 'object:rotating' }));
     canvas.on('object:modified', handleModified);
-    canvas.on('object:scaling', handleModified);
-    canvas.on('object:rotating', handleModified);
 
     const initObjects = async () => {
       try {
@@ -160,6 +229,7 @@ const JacketCanvas: React.FC<JacketCanvasProps> = ({
 
         // 2. Jacket Segments
         const canvasHeight = canvas.getHeight();
+        const canvasWidth = canvas.getWidth();
         for (const [name, url] of Object.entries(segments)) {
           const segmentImg = await loadFabricImage(url);
           if (cancelled) return;
@@ -170,14 +240,24 @@ const JacketCanvas: React.FC<JacketCanvasProps> = ({
             name,
             originX: 'center',
             originY: 'center',
-            left: savedTransform ? toCanvasCoord(savedTransform.x, canvasHeight) : canvas.getCenterPoint().x,
-            top: savedTransform ? toCanvasCoord(savedTransform.y, canvasHeight) : canvas.getCenterPoint().y,
+            left: savedTransform 
+              ? toCanvasX(savedTransform.x, canvasWidth, canvasHeight) 
+              : canvas.getCenterPoint().x,
+            top: savedTransform 
+              ? toCanvasCoord(savedTransform.y, canvasHeight) 
+              : canvas.getCenterPoint().y,
             angle: savedTransform?.rotation || 0,
             opacity: savedTransform?.opacity ?? 1,
             flipX: savedTransform?.flipX ?? false,
             flipY: savedTransform?.flipY ?? false,
             objectCaching: false,
             selectable: true,
+            perPixelTargetFind: true,
+            targetFindTolerance: 10,
+            padding: 4,
+            // Accurate scaling controls
+            centeredScaling: true,
+            centeredRotation: true
           });
 
           // Accurate Scale Initialization
@@ -186,21 +266,18 @@ const JacketCanvas: React.FC<JacketCanvasProps> = ({
           
           segmentImg.scaleToWidth(toCanvasCoord(virtualWidth, canvasHeight));
           if (virtualHeight) {
-            segmentImg.set({ scaleY: toCanvasCoord(virtualHeight, canvasHeight) / segmentImg.getOriginalSize().height });
+            segmentImg.set({ scaleY: toCanvasCoord(virtualHeight, canvasHeight) / segmentImg.height! });
           }
 
           canvas.add(segmentImg);
         }
 
         // 3. Selection State
-        const activeObj = canvas.getObjects().find(obj => obj.name === activePart);
+        const activeObj = canvas.getObjects().find(obj => obj.name === activePartRef.current);
         if (activeObj) canvas.setActiveObject(activeObj);
 
         canvas.requestRenderAll();
-        
-        // 4. Initial Sync
-        handleModified();
-        
+        handleModified({ type: 'object:modified' });
         isUpdatingRef.current = false;
       } catch (err) {
         console.error("Error initializing Jacket Canvas:", err);
@@ -217,42 +294,43 @@ const JacketCanvas: React.FC<JacketCanvasProps> = ({
     };
   }, [segments, personaType, canvasSize]); // Re-init on hard changes
 
-  // Handle Dynamic Visual State (Openness, Active Highlight, Transforms)
+  // Effect 1: Transform Synchronization (State -> Canvas)
   useEffect(() => {
     const canvas = fabricCanvasRef.current;
+    // CRITICAL: Skip sync during active interaction to prevent feedback loops
     if (!canvas || isUpdatingRef.current || isInteractingRef.current) return;
 
-    // A. Sync Transforms from State -> Canvas
+    const activeObj = canvas.getActiveObject();
+
+    // Sync Transforms from State -> Canvas
     canvas.getObjects().forEach(obj => {
       if (obj.name && obj.name !== 'mannequin') {
+        // Skip sync for the object currently being manipulated
+        if (isInteractingRef.current && obj === activeObj) return;
+
         const segmentData = modularData.segments[obj.name as keyof ModularJacketData['segments']];
         if (segmentData) {
           const trans = segmentData.transform;
           const canvasHeight = canvas.getHeight();
+          const canvasWidth = canvas.getWidth();
           
           obj.set({
-            left: toCanvasCoord(trans.x, canvasHeight),
+            left: toCanvasX(trans.x, canvasWidth, canvasHeight),
             top: toCanvasCoord(trans.y, canvasHeight),
             angle: trans.rotation,
             opacity: trans.opacity ?? 1,
             flipX: trans.flipX ?? false,
-            flipY: trans.flipY ?? false
+            flipY: trans.flipY ?? false,
+            scaleX: toCanvasCoord(trans.width || 350, canvasHeight) / obj.width!,
+            scaleY: toCanvasCoord(trans.height || 350, canvasHeight) / obj.height!
           });
-
-          // Accurate Scale Sync
-          const virtualWidth = trans.width || 350;
-          const virtualHeight = trans.height;
-          obj.scaleToWidth(toCanvasCoord(virtualWidth, canvasHeight));
-          if (virtualHeight) {
-            obj.set({ scaleY: toCanvasCoord(virtualHeight, canvasHeight) / obj.getOriginalSize().height });
-          }
           
           obj.setCoords();
         }
       }
     });
 
-    // B. Center Opening Mask
+    // Center Opening Mask
     const torso = canvas.getObjects().find(obj => obj.name === 'torso');
     if (torso) {
       if (modularData.openness && modularData.openness > 0) {
@@ -267,27 +345,72 @@ const JacketCanvas: React.FC<JacketCanvasProps> = ({
       }
     }
 
-    // C. Active Part Highlighting & Controls
+    canvas.requestRenderAll();
+  }, [modularData]);
+
+  // Effect 2: Interaction Logic (Controls, Selection, Highlights)
+  useEffect(() => {
+    const canvas = fabricCanvasRef.current;
+    if (!canvas || isUpdatingRef.current) return;
+
+    // A. Apply Highlights & Controls
     canvas.getObjects().forEach(obj => {
       if (obj.name && obj.name !== 'mannequin') {
-        const isActive = obj.name === activePart;
+        const isSelected = obj.name === activePart;
+        
         obj.set({ 
-          hasControls: isActive,
+          hasControls: isSelected,
           selectable: true,
           evented: true,
-          stroke: isActive ? '#5B8CFF' : undefined,
-          strokeWidth: isActive ? 2 : 0
+          stroke: isSelected ? '#5B8CFF' : undefined,
+          strokeWidth: isSelected ? 2 : 0,
+          hoverCursor: 'move',
+          lockMovementX: false,
+          lockMovementY: false,
+          lockRotation: false,
+          lockScalingX: false,
+          lockScalingY: false
         });
+        obj.setCoords();
       }
     });
 
-    const activeObj = canvas.getObjects().find(obj => obj.name === activePart);
-    if (activeObj && canvas.getActiveObject() !== activeObj) {
-      canvas.setActiveObject(activeObj);
+    // B. Handle Active Object Focus
+    if (!isGroupMode && activePart) {
+      const activeObj = canvas.getObjects().find(obj => obj.name === activePart);
+      if (activeObj && canvas.getActiveObject() !== activeObj) {
+        canvas.setActiveObject(activeObj);
+      }
+    } else if (!activePart && !isGroupMode) {
+      canvas.discardActiveObject();
     }
 
     canvas.requestRenderAll();
-  }, [modularData, activePart]);
+
+    // C. Selection Events
+    const handleSelection = (e: any) => {
+      const selected = e.selected?.[0] || e.target;
+      if (selected && selected.name && selected.name !== 'mannequin' && selected.name !== activePart) {
+        onSelectPart?.(selected.name);
+      }
+    };
+
+    const handleSelectionCleared = () => {
+      if (!isUpdatingRef.current && !isInteractingRef.current) {
+        onSelectPart?.(null);
+      }
+    };
+
+    canvas.on('selection:created', handleSelection);
+    canvas.on('selection:updated', handleSelection);
+    canvas.on('selection:cleared', handleSelectionCleared);
+
+    return () => {
+      canvas.off('selection:created', handleSelection);
+      canvas.off('selection:updated', handleSelection);
+      canvas.off('selection:cleared', handleSelectionCleared);
+    };
+  }, [activePart, isGroupMode, onSelectPart]);
 
   // Handle Responsiveness
   useEffect(() => {

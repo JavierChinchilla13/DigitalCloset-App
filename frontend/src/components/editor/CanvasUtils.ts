@@ -54,12 +54,13 @@ export const getVirtualTransform = (obj: FabricObject, canvasWidth: number, canv
   const scaledWidth = obj.getScaledWidth();
   const scaledHeight = obj.getScaledHeight();
 
+  // Rounding to 2 decimal places prevents precision jitter
   const transform = {
-    x: toVirtualX(obj.left || 0, canvasWidth, canvasHeight),
-    y: toVirtualCoord(obj.top || 0, canvasHeight),
-    width: toVirtualCoord(scaledWidth, canvasHeight),
-    height: toVirtualCoord(scaledHeight, canvasHeight),
-    rotation: obj.angle || 0,
+    x: Number(toVirtualX(obj.left || 0, canvasWidth, canvasHeight).toFixed(2)),
+    y: Number(toVirtualCoord(obj.top || 0, canvasHeight).toFixed(2)),
+    width: Number(toVirtualCoord(scaledWidth, canvasHeight).toFixed(2)),
+    height: Number(toVirtualCoord(scaledHeight, canvasHeight).toFixed(2)),
+    rotation: Number((obj.angle || 0).toFixed(2)),
     opacity: obj.opacity || 1,
     flipX: obj.flipX || false,
     flipY: obj.flipY || false,

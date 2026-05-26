@@ -182,6 +182,10 @@ const UploadFlow: React.FC<UploadFlowProps> = ({ isOpen, onClose }) => {
       const blob = await response.blob();
       const finalUrl = await cloudinaryService.uploadImage(blob);
       
+      // We set this as the primary image URL for all garments, including jackets.
+      // This ensures the closet view shows the clean source image.
+      setProcessedImageUrl(finalUrl);
+      
       if (category === ClothingCategory.JACKET) {
         // Now perform modular analysis on the final cleaned image
         setProcessingStatus('Analyzing modular structure...');
@@ -332,20 +336,27 @@ const UploadFlow: React.FC<UploadFlowProps> = ({ isOpen, onClose }) => {
       setStep('PROCESSING');
       setProcessingStatus('Finalizing modular asset...');
       
-      // Upload the composite preview to Cloudinary
-      // Convert DataURL to Blob
-      const response = await fetch(data.previewUrl);
-      const blob = await response.blob();
-      const uploadedPreviewUrl = await cloudinaryService.uploadImage(blob);
+      // For modular jackets, the user wants the closet thumbnail to be the 
+      // RAW AI extraction (background removed), NOT the manual cleanup.
+      let thumbnailImageUrl = processedImageUrl; // Default fallback
+
+      if (backgroundRemovedUrl) {
+         // Fetch the raw AI-extracted blob (before manual cleanup)
+         const response = await fetch(backgroundRemovedUrl);
+         const blob = await response.blob();
+         thumbnailImageUrl = await cloudinaryService.uploadImage(blob);
+      }
+
+      if (!thumbnailImageUrl) throw new Error('Missing thumbnail image source.');
 
       await addItem({
         name: data.name,
         description: data.description,
         category: ClothingCategory.JACKET,
         personaType,
-        imageUrl: uploadedPreviewUrl,
+        imageUrl: thumbnailImageUrl, // This is the raw AI extraction for the closet
         isModular: true,
-        modularData: data.modularData,
+        modularData: data.modularData, // This contains the high-precision cleaned segments
         transform: { x: 375, y: 300, scaleX: 1, scaleY: 1, rotation: 0, width: 450, height: 450 }
       });
       handleClose();

@@ -36,7 +36,7 @@ const JacketFittingEditor: React.FC<JacketFittingEditorProps> = ({
   const [description, setDescription] = useState('');
   const [activePart, setActivePart] = useState<string>('torso');
   const [isWarpMode, setIsWarpMode] = useState(false);
-  const [isGroupMode, setIsGroupMode] = useState(false);
+  const [isGroupMode, setIsGroupMode] = useState(true);
   
   const [modularData, setModularData] = useState<ModularJacketData>(() => {
     const initialSegments: Record<string, any> = {};
@@ -106,8 +106,39 @@ const JacketFittingEditor: React.FC<JacketFittingEditorProps> = ({
   };
 
   const handleFinish = async () => {
-    if (!fabricCanvasRef.current) return;
-    const previewUrl = exportCanvasToImage(fabricCanvasRef.current);
+    const canvas = fabricCanvasRef.current;
+    if (!canvas) return;
+
+    // 1. Temporarily hide the mannequin and indicators for a clean export
+    const mannequin = canvas.getObjects().find(obj => obj.name === 'mannequin');
+    const indicators = canvas.getObjects().filter(obj => obj.name === 'indicator');
+    
+    if (mannequin) mannequin.set({ visible: false });
+    indicators.forEach(ind => ind.set({ visible: false }));
+    
+    // 2. Clear stroke highlights from active parts
+    const objects = canvas.getObjects();
+    const originalStrokes = objects.map(obj => ({ obj, stroke: obj.stroke, strokeWidth: obj.strokeWidth }));
+    objects.forEach(obj => {
+      if (obj.name && obj.name !== 'mannequin') {
+        obj.set({ stroke: undefined, strokeWidth: 0 });
+      }
+    });
+
+    canvas.renderAll();
+
+    // 3. Export clean transparent image
+    const previewUrl = exportCanvasToImage(canvas);
+
+    // 4. Restore visibility and highlights
+    if (mannequin) mannequin.set({ visible: true });
+    indicators.forEach(ind => ind.set({ visible: true }));
+    originalStrokes.forEach(({ obj, stroke, strokeWidth }) => {
+      obj.set({ stroke, strokeWidth });
+    });
+    
+    canvas.renderAll();
+
     onSave({
       name,
       description,
@@ -139,43 +170,36 @@ const JacketFittingEditor: React.FC<JacketFittingEditorProps> = ({
 
         <div className="flex items-center gap-3">
            <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-1 flex gap-1">
-             <button
-               onClick={() => { setIsGroupMode(false); setIsWarpMode(false); }}
-               className={`p-2 rounded-xl transition-all ${!isGroupMode && !isWarpMode ? 'bg-accent text-white' : 'text-text-secondary hover:text-white'}`}
-               title="Single Part Mode"
-             >
-               <MousePointer2 size={16} />
-             </button>
-             <button
-               onClick={() => { setIsGroupMode(true); setIsWarpMode(false); }}
-               className={`p-2 rounded-xl transition-all ${isGroupMode ? 'bg-accent text-white' : 'text-text-secondary hover:text-white'}`}
-               title="Group Transform Mode"
-             >
-               <Maximize2 size={16} />
-             </button>
-             <button
-               onClick={() => { setIsWarpMode(true); setIsGroupMode(false); }}
-               className={`p-2 rounded-xl transition-all ${isWarpMode ? 'bg-accent text-white' : 'text-text-secondary hover:text-white'}`}
-               title="Mesh Warp Mode"
-             >
-               <Wand2 size={16} />
-             </button>
-           </div>
-
-           <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-1 flex gap-1">
               {Object.keys(segments).map(name => (
                 <button
                   key={name}
-                  onClick={() => { setActivePart(name); }}
+                  onClick={() => { 
+                    setActivePart(name); 
+                    setIsGroupMode(false);
+                    setIsWarpMode(false);
+                  }}
                   className={`px-4 py-2 rounded-xl text-[8px] font-black uppercase tracking-widest transition-all ${
                     activePart === name && !isGroupMode 
-                      ? 'bg-white/10 text-white border border-white/10' 
+                      ? 'bg-accent text-white shadow-[0_0_15px_rgba(91,140,255,0.3)]' 
                       : 'text-text-secondary hover:text-white'
                   }`}
                 >
                   {name.replace(/([A-Z])/g, ' $1')}
                 </button>
               ))}
+              <button
+                onClick={() => { 
+                  setIsGroupMode(true); 
+                  setIsWarpMode(false);
+                }}
+                className={`px-4 py-2 rounded-xl text-[8px] font-black uppercase tracking-widest transition-all ${
+                  isGroupMode 
+                    ? 'bg-accent text-white shadow-[0_0_15px_rgba(91,140,255,0.3)]' 
+                    : 'text-text-secondary hover:text-white'
+                }`}
+              >
+                All
+              </button>
            </div>
         </div>
       </div>
@@ -238,6 +262,15 @@ const JacketFittingEditor: React.FC<JacketFittingEditorProps> = ({
                 activePart={activePart}
                 isWarpMode={isWarpMode}
                 isGroupMode={isGroupMode}
+                onSelectPart={(part) => {
+                  if (part) {
+                    setActivePart(part);
+                    setIsGroupMode(false);
+                  } else {
+                    setActivePart('');
+                    setIsGroupMode(false);
+                  }
+                }}
               />
           </div>
         </main>
