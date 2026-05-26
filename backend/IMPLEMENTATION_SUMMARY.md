@@ -55,6 +55,16 @@
 - **Pair Identification**: Added `side` property to track left vs. right items (essential for the new Footwear Engine).
 - **Asymmetrical Support**: Backend now handles independent storage for items belonging to the same category but occupying different side slots.
 
+## Phase 7: Infrastructure & Security Refinement Completed
+
+### 1. Payload Optimization
+- **Multipart Limits**: Increased `max-file-size` and `max-request-size` to **10MB** to support high-resolution garment images and complex modular assets.
+- **Service Integration**: Optimized `application.properties` for seamless integration with external AI and Cloudinary services.
+
+### 2. Robust Error Orchestration
+- **Accurate Exception Handling**: Refined the `GlobalExceptionHandler` to distinguish between client-side errors (400) and server-side/AI failures (500), ensuring clearer frontend debugging.
+- **Dynamic Authorization**: Updated `SecurityConfig` to explicitly manage permissions for AI and other core API utility paths.
+
 ---
 
 ## Technical Decisions

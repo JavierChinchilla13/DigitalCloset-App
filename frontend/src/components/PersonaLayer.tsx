@@ -61,8 +61,12 @@ const PersonaLayer: React.FC<PersonaLayerProps> = ({
   const getStyle = () => {
     if (!finalTransform) {
       return {
+        position: 'absolute' as const,
+        left: '50%',
+        top: '50%',
         height: '100%',
         width: 'auto',
+        transform: 'translate(-50%, -50%)',
         objectFit: 'contain' as const,
         visibility: 'visible' as const,
         opacity: 1
@@ -104,9 +108,12 @@ const PersonaLayer: React.FC<PersonaLayerProps> = ({
 
     return {
       position: 'absolute' as const,
+      left: '50%',
+      top: '50%',
       width: `${width}px`,
       height: `${height}px`,
       transform: `
+        translate(-50%, -50%)
         translate(${offsetX}px, ${offsetY}px) 
         rotate(${finalTransform.rotation}deg) 
         scale(${finalTransform.flipX ? -1 : 1}, ${finalTransform.flipY ? -1 : 1})

@@ -237,6 +237,7 @@ const JacketFittingEditor: React.FC<JacketFittingEditorProps> = ({
                 onCanvasReady={(canvas) => { fabricCanvasRef.current = canvas; }}
                 activePart={activePart}
                 isWarpMode={isWarpMode}
+                isGroupMode={isGroupMode}
               />
           </div>
         </main>

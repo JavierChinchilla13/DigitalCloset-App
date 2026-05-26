@@ -16,20 +16,22 @@ import {
 import { ClothingCategory, PersonaType, type ClothingTransform } from '../../types';
 import { useClothingStore } from '../../store/useClothingStore';
 import { cloudinaryService } from '../../api/cloudinaryService';
-import { removeBackground } from '../../utils/removeBackground';
+import { bgRemovalService, optimizeImage } from '../../lib/background-removers';
+import { segmentationService } from '../../utils/segmentationService';
 import FittingEditor from './FittingEditor';
 
 import ShoeSymmetryCheck from './ShoeSymmetryCheck';
 import ShoeFittingEditor from './ShoeFittingEditor';
 import JacketSegmentationTool from './JacketSegmentationTool';
 import JacketFittingEditor from './JacketFittingEditor';
+import GarmentCleanup from './GarmentCleanup';
 
 interface UploadFlowProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-type Step = 'UPLOAD' | 'CONFIG' | 'PROCESSING' | 'FITTING' | 'SHOE_SYMMETRY' | 'SHOE_UPLOAD_RIGHT' | 'SHOE_FITTING' | 'JACKET_SEGMENTATION' | 'JACKET_FITTING';
+type Step = 'UPLOAD' | 'CONFIG' | 'PROCESSING' | 'PREVIEW' | 'FITTING' | 'SHOE_SYMMETRY' | 'SHOE_UPLOAD_RIGHT' | 'SHOE_FITTING' | 'JACKET_SEGMENTATION' | 'JACKET_FITTING' | 'GARMENT_CLEANUP';
 
 const CATEGORY_ICONS: Record<ClothingCategory, React.ElementType> = {
   [ClothingCategory.TOP]: Shirt,
@@ -52,6 +54,7 @@ const UploadFlow: React.FC<UploadFlowProps> = ({ isOpen, onClose }) => {
 
   // Jacket Specific State
   const [jacketSegments, setJacketSegments] = useState<Record<string, string>>({});
+  const [backgroundRemovedUrl, setBackgroundRemovedUrl] = useState<string | null>(null);
 
   // Config State
   const [category, setCategory] = useState<ClothingCategory>(ClothingCategory.TOP);
@@ -60,6 +63,7 @@ const UploadFlow: React.FC<UploadFlowProps> = ({ isOpen, onClose }) => {
   // Processing State
   const [processingStatus, setProcessingStatus] = useState('');
   const [processedImageUrl, setProcessedImageUrl] = useState<string | null>(null);
+  const [originalPreviewUrl, setOriginalPreviewUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const { addItem } = useClothingStore();
@@ -72,9 +76,11 @@ const UploadFlow: React.FC<UploadFlowProps> = ({ isOpen, onClose }) => {
     setLeftProcessedUrl(null);
     setRightProcessedUrl(null);
     setJacketSegments({});
+    setBackgroundRemovedUrl(null);
     setCategory(ClothingCategory.TOP);
     setPersonaType(PersonaType.MALE);
     setProcessedImageUrl(null);
+    setOriginalPreviewUrl(null);
     setError(null);
   };
 
@@ -85,6 +91,7 @@ const UploadFlow: React.FC<UploadFlowProps> = ({ isOpen, onClose }) => {
 
   const handleFileSelect = (selectedFile: File) => {
     setFile(selectedFile);
+    setOriginalPreviewUrl(URL.createObjectURL(selectedFile));
     setStep('CONFIG');
   };
 
@@ -104,37 +111,138 @@ const UploadFlow: React.FC<UploadFlowProps> = ({ isOpen, onClose }) => {
     
     try {
       if (category === ClothingCategory.SHOES) {
-         setProcessingStatus('Digitizing pair assets...');
-         const leftBlob = await removeBackground(file);
-         const leftUrl = await cloudinaryService.uploadImage(leftBlob);
-         setLeftProcessedUrl(leftUrl);
+         setProcessingStatus('Digitizing pair...');
+         const leftResult = await bgRemovalService.removeBackground(file, {
+           onProgress: (status) => setProcessingStatus(status)
+         });
+         setLeftProcessedUrl(leftResult.url);
 
          if (isAsymmetrical && rightFile) {
-            setProcessingStatus('Perfecting right shoe...');
-            const rightBlob = await removeBackground(rightFile);
-            const rightUrl = await cloudinaryService.uploadImage(rightBlob);
-            setRightProcessedUrl(rightUrl);
+            setProcessingStatus('Processing right shoe...');
+            const rightResult = await bgRemovalService.removeBackground(rightFile, {
+              onProgress: (status) => setProcessingStatus(`Right Shoe: ${status}`)
+            });
+            setRightProcessedUrl(rightResult.url);
          } else {
-            setRightProcessedUrl(leftUrl);
+            setRightProcessedUrl(leftResult.url);
          }
          setStep('SHOE_FITTING');
-      } else if (category === ClothingCategory.JACKET) {
-         setProcessingStatus('Isolating outerwear structure...');
-         const transparentBlob = await removeBackground(file);
-         const blobFile = new File([transparentBlob], 'jacket.png', { type: 'image/png' });
-         setFile(blobFile);
-         setStep('JACKET_SEGMENTATION');
       } else {
-         setProcessingStatus('Removing background...');
-         const transparentBlob = await removeBackground(file);
-         setProcessingStatus('Uploading to secure cloud...');
-         const url = await cloudinaryService.uploadImage(transparentBlob);
-         setProcessedImageUrl(url);
-         setStep('FITTING');
+         setProcessingStatus('Analyzing garment...');
+         const result = await bgRemovalService.removeBackground(file, {
+           onProgress: (status) => setProcessingStatus(status)
+         });
+         
+         setBackgroundRemovedUrl(result.url);
+         
+         // If removal worked perfectly (or at least used an AI method), show preview
+         if (result.method !== 'original') {
+            setStep('PREVIEW');
+         } else {
+            // If all AI failed, go directly to cleanup
+            setStep('GARMENT_CLEANUP');
+         }
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Processing failed. Please try again.';
       setError(message);
+    }
+  };
+
+  const continueWithOriginal = async () => {
+    if (!file) return;
+    setError(null);
+    setProcessingStatus('Optimizing for cleanup...');
+    try {
+      const optimizedFile = await optimizeImage(file);
+      const localUrl = URL.createObjectURL(optimizedFile);
+      
+      if (category === ClothingCategory.SHOES) {
+        setProcessingStatus('Uploading original image...');
+        const url = await cloudinaryService.uploadImage(optimizedFile);
+        setLeftProcessedUrl(url);
+        setRightProcessedUrl(url);
+        setStep('SHOE_FITTING');
+      } else {
+        setBackgroundRemovedUrl(localUrl);
+        setStep('GARMENT_CLEANUP');
+      }
+    } catch (err) {
+      setError('Upload failed.');
+    }
+  };
+
+  const handleCleanupComplete = async (cleanedDataUrl: string) => {
+    try {
+      setStep('PROCESSING');
+      setProcessingStatus('Finalizing cleaned asset...');
+      
+      // Upload cleaned image to Cloudinary
+      const response = await fetch(cleanedDataUrl);
+      const blob = await response.blob();
+      const finalUrl = await cloudinaryService.uploadImage(blob);
+      
+      if (category === ClothingCategory.JACKET) {
+        // Now perform modular analysis on the final cleaned image
+        setProcessingStatus('Analyzing modular structure...');
+        const fileFinal = new File([blob], 'cleaned_jacket.png', { type: 'image/png' });
+        
+        const segments = await segmentationService.segmentJacket(fileFinal);
+        
+        if (segments.size > 0) {
+          const segmentUrls: Record<string, string> = {};
+          for (const [name, sBlob] of segments.entries()) {
+            const sUrl = await cloudinaryService.uploadImage(sBlob);
+            segmentUrls[name] = sUrl;
+          }
+          setJacketSegments(segmentUrls);
+          setStep('JACKET_FITTING');
+        } else {
+          // Fallback if AI fails even after cleanup
+          setProcessedImageUrl(finalUrl);
+          setStep('FITTING');
+        }
+      } else {
+        setProcessedImageUrl(finalUrl);
+        setStep('FITTING');
+      }
+    } catch (err) {
+      console.error('Final cleanup processing failed:', err);
+      setError('Failed to process cleaned image.');
+    }
+  };
+
+  const handleCleanupSkip = async () => {
+    if (!backgroundRemovedUrl) return;
+    try {
+      setStep('PROCESSING');
+      setProcessingStatus('Finalizing asset...');
+      
+      // Fetch the blob from the local ObjectURL or Cloudinary URL
+      const response = await fetch(backgroundRemovedUrl);
+      const blob = await response.blob();
+      const finalUrl = await cloudinaryService.uploadImage(blob);
+
+      if (category === ClothingCategory.JACKET) {
+        setProcessingStatus('Analyzing garment structure...');
+        const fileForAI = new File([blob], 'jacket.png', { type: 'image/png' });
+        
+        const segments = await segmentationService.segmentJacket(fileForAI);
+        const segmentUrls: Record<string, string> = {};
+        
+        for (const [name, sBlob] of segments.entries()) {
+          const sUrl = await cloudinaryService.uploadImage(sBlob);
+          segmentUrls[name] = sUrl;
+        }
+
+        setJacketSegments(segmentUrls);
+        setStep('JACKET_FITTING');
+      } else {
+        setProcessedImageUrl(finalUrl);
+        setStep('FITTING');
+      }
+    } catch (err) {
+      setError('Failed to process image.');
     }
   };
 
@@ -262,7 +370,7 @@ const UploadFlow: React.FC<UploadFlowProps> = ({ isOpen, onClose }) => {
         initial={{ scale: 0.95, opacity: 0, y: 20 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
         className={`relative bg-background-secondary border border-white/5 rounded-[3rem] shadow-2xl overflow-hidden transition-all duration-700 ${
-          step === 'FITTING' || step === 'SHOE_FITTING' || step === 'JACKET_FITTING' ? 'w-full max-w-6xl h-[90vh]' : 'w-full max-w-2xl'
+          step === 'FITTING' || step === 'SHOE_FITTING' || step === 'JACKET_FITTING' || step === 'GARMENT_CLEANUP' ? 'w-full max-w-6xl h-[90vh]' : 'w-full max-w-2xl'
         }`}
         onClick={(e) => e.stopPropagation()}
       >
@@ -279,10 +387,11 @@ const UploadFlow: React.FC<UploadFlowProps> = ({ isOpen, onClose }) => {
             initial={{ width: '0%' }}
             animate={{ 
               width: step === 'UPLOAD' ? '10%' : 
-                     step === 'CONFIG' ? '25%' : 
-                     step === 'SHOE_SYMMETRY' ? '40%' :
-                     step === 'JACKET_SEGMENTATION' ? '50%' :
-                     step === 'PROCESSING' ? '75%' : '100%' 
+                     step === 'CONFIG' ? '20%' : 
+                     step === 'GARMENT_CLEANUP' ? '40%' :
+                     step === 'JACKET_SEGMENTATION' ? '60%' :
+                     step === 'JACKET_FITTING' ? '80%' :
+                     step === 'PROCESSING' ? '90%' : '100%' 
             }}
           />
         </div>
@@ -350,10 +459,19 @@ const UploadFlow: React.FC<UploadFlowProps> = ({ isOpen, onClose }) => {
               </motion.div>
             )}
 
+            {step === 'GARMENT_CLEANUP' && backgroundRemovedUrl && (
+              <GarmentCleanup 
+                imageUrl={backgroundRemovedUrl}
+                onComplete={handleCleanupComplete}
+                onSkip={handleCleanupSkip}
+                onBack={() => setStep('CONFIG')}
+              />
+            )}
+
             {step === 'JACKET_SEGMENTATION' && file && (
               <JacketSegmentationTool 
                 originalFile={file}
-                onBack={() => setStep('CONFIG')}
+                onBack={() => setStep('GARMENT_CLEANUP')}
                 onComplete={handleJacketSegmentationComplete}
               />
             )}
@@ -392,17 +510,85 @@ const UploadFlow: React.FC<UploadFlowProps> = ({ isOpen, onClose }) => {
                       </div>
                       <motion.div animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.6, 0.3] }} transition={{ repeat: Infinity, duration: 2 }} className="absolute inset-0 bg-accent/20 blur-3xl rounded-full" />
                     </div>
-                    <div className="text-center space-y-2">
+                    <div className="text-center space-y-6">
                       <p className="text-white font-bold tracking-tight text-xl">{processingStatus}</p>
                     </div>
                   </>
                 ) : (
-                  <div className="text-center space-y-4">
+                  <div className="text-center space-y-6 max-w-sm">
                     <AlertCircle size={40} className="text-red-500 mx-auto" />
-                    <p className="text-red-400 text-xs font-bold uppercase tracking-widest">{error}</p>
-                    <button onClick={resetFlow} className="py-4 px-8 bg-white/5 text-white rounded-2xl font-black text-[10px] tracking-widest uppercase transition-all">Reset</button>
+                    <div className="space-y-2">
+                      <p className="text-white font-bold tracking-tight text-lg">Processing Failed</p>
+                      <p className="text-text-secondary text-[10px] uppercase tracking-widest leading-relaxed">{error}</p>
+                    </div>
+                    
+                    <div className="flex flex-col gap-3 pt-4">
+                      <button 
+                        onClick={startProcessing} 
+                        className="w-full py-4 bg-accent hover:bg-accent-hover text-white rounded-2xl font-black text-[10px] tracking-widest uppercase transition-all shadow-lg shadow-accent/20"
+                      >
+                        Retry Removal
+                      </button>
+                      
+                      <button 
+                        onClick={continueWithOriginal} 
+                        className="w-full py-4 bg-white/5 hover:bg-white/10 text-white rounded-2xl font-black text-[10px] tracking-widest uppercase transition-all"
+                      >
+                        Continue with Original
+                      </button>
+                    </div>
                   </div>
                 )}
+              </motion.div>
+            )}
+
+            {step === 'PREVIEW' && backgroundRemovedUrl && (
+              <motion.div key="preview" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-12">
+                <div className="text-center space-y-2">
+                  <h2 className="text-3xl font-light tracking-tighter text-white uppercase italic">Step 3 — Analysis Preview</h2>
+                  <p className="text-text-secondary text-[10px] font-black tracking-widest uppercase opacity-40">Compare AI extraction with original source</p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-8 h-[40vh]">
+                  <div className="space-y-4">
+                    <p className="text-[10px] font-black tracking-widest text-text-secondary uppercase text-center opacity-50">Original Source</p>
+                    <div className="flex-1 h-full rounded-[2rem] border border-white/5 bg-white/[0.02] overflow-hidden flex items-center justify-center p-4">
+                      <img src={originalPreviewUrl!} alt="Original" className="max-w-full max-h-full object-contain" />
+                    </div>
+                  </div>
+                  <div className="space-y-4">
+                    <p className="text-[10px] font-black tracking-widest text-accent uppercase text-center">AI Extraction</p>
+                    <div className="flex-1 h-full rounded-[2rem] border border-accent/20 bg-accent/5 overflow-hidden flex items-center justify-center p-4 relative">
+                      <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '20px 20px' }} />
+                      <img src={backgroundRemovedUrl} alt="Processed" className="max-w-full max-h-full object-contain relative z-10" />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-4">
+                  <button 
+                    onClick={() => setStep('GARMENT_CLEANUP')}
+                    className="w-full py-6 bg-accent hover:bg-accent-hover text-white rounded-[2rem] font-black text-xs tracking-[0.4em] uppercase transition-all shadow-xl shadow-accent/20 flex items-center justify-center gap-3"
+                  >
+                    <Sparkles size={18} />
+                    <span>Confirm & Continue</span>
+                  </button>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <button 
+                      onClick={startProcessing}
+                      className="py-4 bg-white/5 hover:bg-white/10 text-white rounded-2xl font-black text-[10px] tracking-widest uppercase transition-all border border-white/5"
+                    >
+                      Retry Removal
+                    </button>
+                    <button 
+                      onClick={continueWithOriginal}
+                      className="py-4 bg-white/5 hover:bg-white/10 text-text-secondary hover:text-white rounded-2xl font-black text-[10px] tracking-widest uppercase transition-all border border-white/5"
+                    >
+                      Skip AI Results
+                    </button>
+                  </div>
+                </div>
               </motion.div>
             )}
 

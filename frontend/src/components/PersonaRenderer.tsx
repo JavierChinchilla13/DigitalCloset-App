@@ -60,40 +60,38 @@ const PersonaRenderer: React.FC<PersonaRendererProps> = ({
   const accessories = getItems(persona.accessoryIds);
 
   const layers: any[] = [
-    { id: 'base', imageUrl: baseImage, zIndex: 1, alt: 'Mannequin' },
+    { id: 'base', imageUrl: baseImage, zIndex: 0, alt: 'Mannequin' },
   ];
 
-  // Add Bottoms (Z: 10-19)
+  // Add Bottoms (Z: 100+)
   bottoms.forEach((item, index) => {
     layers.push({
       id: `bottom-${item.itemId}`,
       imageUrl: item.imageUrl,
-      zIndex: 10 + index,
+      zIndex: 100 + index,
       transform: item.transform,
       category: item.category,
       personaType: persona.type
     });
   });
 
-  // Add Shoes (Z: 20-24)
+  // Add Shoes (Z: 200+)
   if (leftShoe && rightShoe && leftShoe.itemId === rightShoe.itemId) {
     // Legacy behavior: Single image contains both shoes
     layers.push({
       id: `shoes-pair-${leftShoe.itemId}`,
       imageUrl: leftShoe.imageUrl,
-      zIndex: 20,
+      zIndex: 200,
       transform: leftShoe.transform,
       category: leftShoe.category,
       personaType: persona.type
-      // No side property -> Uses centered preset
     });
   } else {
-    // Independent or mismatched slots
     if (leftShoe) {
       layers.push({
         id: `left-shoe-${leftShoe.itemId}`,
         imageUrl: leftShoe.imageUrl,
-        zIndex: 20,
+        zIndex: 200,
         transform: leftShoe.transform,
         category: leftShoe.category,
         personaType: persona.type,
@@ -104,7 +102,7 @@ const PersonaRenderer: React.FC<PersonaRendererProps> = ({
       layers.push({
         id: `right-shoe-${rightShoe.itemId}`,
         imageUrl: rightShoe.imageUrl,
-        zIndex: 21,
+        zIndex: 201,
         transform: rightShoe.transform,
         category: rightShoe.category,
         personaType: persona.type,
@@ -113,31 +111,31 @@ const PersonaRenderer: React.FC<PersonaRendererProps> = ({
     }
   }
 
-  // Add Dresses (Z: 25-29)
+  // Add Dresses (Z: 250+)
   dresses.forEach((item, index) => {
     layers.push({
       id: `dress-${item.itemId}`,
       imageUrl: item.imageUrl,
-      zIndex: 25 + index,
+      zIndex: 250 + index,
       transform: item.transform,
       category: item.category,
       personaType: persona.type
     });
   });
 
-  // Add Tops (Z: 30-39)
+  // Add Tops (Z: 300+)
   tops.forEach((item, index) => {
     layers.push({
       id: `top-${item.itemId}`,
       imageUrl: item.imageUrl,
-      zIndex: 30 + index,
+      zIndex: 300 + index,
       transform: item.transform,
       category: item.category,
       personaType: persona.type
     });
   });
 
-  // Add Jackets (Z: 40-49)
+  // Add Jackets (Z: 400+)
   jackets.forEach((item, index) => {
     if (item.isModular && item.modularData) {
       try {
@@ -149,8 +147,11 @@ const PersonaRenderer: React.FC<PersonaRendererProps> = ({
             layers.push({
               id: `jacket-${item.itemId}-${partName}`,
               imageUrl: segment.imageUrl,
-              zIndex: 40 + index + (partIndex * 0.01),
-              transform: { ...segment.transform, openness: modularData.openness },
+              zIndex: 400 + (index * 10) + partIndex,
+              transform: { 
+                ...segment.transform, 
+                openness: partName === 'torso' ? modularData.openness : 0 
+              },
               category: item.category,
               personaType: persona.type
             });
@@ -160,7 +161,7 @@ const PersonaRenderer: React.FC<PersonaRendererProps> = ({
         layers.push({
           id: `jacket-${item.itemId}`,
           imageUrl: item.imageUrl,
-          zIndex: 40 + index,
+          zIndex: 400 + (index * 10),
           transform: item.transform,
           category: item.category,
           personaType: persona.type
@@ -170,7 +171,7 @@ const PersonaRenderer: React.FC<PersonaRendererProps> = ({
       layers.push({
         id: `jacket-${item.itemId}`,
         imageUrl: item.imageUrl,
-        zIndex: 40 + index,
+        zIndex: 400 + (index * 10),
         transform: item.transform,
         category: item.category,
         personaType: persona.type
@@ -178,12 +179,12 @@ const PersonaRenderer: React.FC<PersonaRendererProps> = ({
     }
   });
 
-  // Add Accessories (Z: 50-59)
+  // Add Accessories (Z: 500+)
   accessories.forEach((item, index) => {
     layers.push({
       id: `accessory-${item.itemId}`,
       imageUrl: item.imageUrl,
-      zIndex: 50 + index,
+      zIndex: 500 + index,
       transform: item.transform,
       category: item.category,
       personaType: persona.type

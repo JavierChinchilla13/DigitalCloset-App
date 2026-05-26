@@ -26,6 +26,7 @@ interface JacketCanvasProps {
   onCanvasReady?: (canvas: Canvas) => void;
   activePart?: string;
   isWarpMode?: boolean;
+  isGroupMode?: boolean;
 }
 
 const JacketCanvas: React.FC<JacketCanvasProps> = ({ 
@@ -35,7 +36,8 @@ const JacketCanvas: React.FC<JacketCanvasProps> = ({
   onDataChange,
   onCanvasReady,
   activePart = 'torso',
-  isWarpMode = false
+  isWarpMode = false,
+  isGroupMode = false
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<Canvas | null>(null);
@@ -43,6 +45,7 @@ const JacketCanvas: React.FC<JacketCanvasProps> = ({
   const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
   
   const isUpdatingRef = useRef(false);
+  const isInteractingRef = useRef(false);
   const modularDataRef = useRef(modularData);
   const warpvasInstances = useRef<Map<string, any>>(new Map());
 
@@ -69,10 +72,30 @@ const JacketCanvas: React.FC<JacketCanvasProps> = ({
     fabricCanvasRef.current = canvas;
     if (onCanvasReady) onCanvasReady(canvas);
 
-    const handleModified = () => {
+    const handleModified = (e?: any) => {
       if (isUpdatingRef.current || cancelled) return;
       
       const canvasHeight = canvas.getHeight();
+      
+      // Handle Group Movement if enabled
+      if (isGroupMode && e?.target && e.action === 'drag') {
+        const target = e.target;
+        const dx = toVirtualCoord(target.left - target._stateLeft, canvasHeight);
+        const dy = toVirtualCoord(target.top - target._stateTop, canvasHeight);
+        
+        canvas.getObjects().forEach(obj => {
+          if (obj.name && obj.name !== 'mannequin' && obj !== target) {
+            const currentX = toVirtualCoord(obj.left, canvasHeight);
+            const currentY = toVirtualCoord(obj.top, canvasHeight);
+            obj.set({
+              left: toCanvasCoord(currentX + dx, canvasHeight),
+              top: toCanvasCoord(currentY + dy, canvasHeight)
+            });
+            obj.setCoords();
+          }
+        });
+      }
+
       const currentData: ModularJacketData = {
         ...modularDataRef.current,
         renderOrder: canvas.getObjects()
@@ -92,9 +115,24 @@ const JacketCanvas: React.FC<JacketCanvasProps> = ({
       onDataChange(currentData);
     };
 
+    // Track interaction to prevent sync loops
+    canvas.on('mouse:down', () => { isInteractingRef.current = true; });
+    canvas.on('mouse:up', () => { isInteractingRef.current = false; });
+    
+    // Store initial state for delta calculation
+    canvas.on('object:moving', (e) => {
+      if (!e.target._stateLeft) {
+        e.target._stateLeft = e.target.left;
+        e.target._stateTop = e.target.top;
+      }
+      handleModified(e);
+      // Update state for next move
+      e.target._stateLeft = e.target.left;
+      e.target._stateTop = e.target.top;
+    });
+
     canvas.on('object:modified', handleModified);
     canvas.on('object:scaling', handleModified);
-    canvas.on('object:moving', handleModified);
     canvas.on('object:rotating', handleModified);
 
     const initObjects = async () => {
@@ -158,6 +196,10 @@ const JacketCanvas: React.FC<JacketCanvasProps> = ({
         if (activeObj) canvas.setActiveObject(activeObj);
 
         canvas.requestRenderAll();
+        
+        // 4. Initial Sync
+        handleModified();
+        
         isUpdatingRef.current = false;
       } catch (err) {
         console.error("Error initializing Jacket Canvas:", err);
@@ -174,12 +216,42 @@ const JacketCanvas: React.FC<JacketCanvasProps> = ({
     };
   }, [segments, personaType, canvasSize]); // Re-init on hard changes
 
-  // Handle Dynamic Visual State (Openness, Active Highlight, Warp)
+  // Handle Dynamic Visual State (Openness, Active Highlight, Transforms)
   useEffect(() => {
     const canvas = fabricCanvasRef.current;
-    if (!canvas || isUpdatingRef.current) return;
+    if (!canvas || isUpdatingRef.current || isInteractingRef.current) return;
 
-    // A. Center Opening Mask
+    // A. Sync Transforms from State -> Canvas
+    canvas.getObjects().forEach(obj => {
+      if (obj.name && obj.name !== 'mannequin') {
+        const segmentData = modularData.segments[obj.name as keyof ModularJacketData['segments']];
+        if (segmentData) {
+          const trans = segmentData.transform;
+          const canvasHeight = canvas.getHeight();
+          
+          obj.set({
+            left: toCanvasCoord(trans.x, canvasHeight),
+            top: toCanvasCoord(trans.y, canvasHeight),
+            angle: trans.rotation,
+            opacity: trans.opacity ?? 1,
+            flipX: trans.flipX ?? false,
+            flipY: trans.flipY ?? false
+          });
+
+          // Accurate Scale Sync
+          const virtualWidth = trans.width || 350;
+          const virtualHeight = trans.height;
+          obj.scaleToWidth(toCanvasCoord(virtualWidth, canvasHeight));
+          if (virtualHeight) {
+            obj.set({ scaleY: toCanvasCoord(virtualHeight, canvasHeight) / obj.getOriginalSize().height });
+          }
+          
+          obj.setCoords();
+        }
+      }
+    });
+
+    // B. Center Opening Mask
     const torso = canvas.getObjects().find(obj => obj.name === 'torso');
     if (torso) {
       if (modularData.openness && modularData.openness > 0) {
@@ -194,12 +266,14 @@ const JacketCanvas: React.FC<JacketCanvasProps> = ({
       }
     }
 
-    // B. Active Part Highlighting
+    // C. Active Part Highlighting & Controls
     canvas.getObjects().forEach(obj => {
       if (obj.name && obj.name !== 'mannequin') {
         const isActive = obj.name === activePart;
         obj.set({ 
           hasControls: isActive,
+          selectable: true,
+          evented: true,
           stroke: isActive ? '#5B8CFF' : undefined,
           strokeWidth: isActive ? 2 : 0
         });
@@ -212,7 +286,7 @@ const JacketCanvas: React.FC<JacketCanvasProps> = ({
     }
 
     canvas.requestRenderAll();
-  }, [modularData.openness, activePart]);
+  }, [modularData, activePart]);
 
   // Handle Responsiveness
   useEffect(() => {

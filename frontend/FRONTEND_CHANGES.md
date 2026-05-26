@@ -38,6 +38,27 @@
 - **Independent Shoe Fitting**: Specialized studio for symmetrical or asymmetrical shoe pairs.
 - **Side-Aware Persistence**: Distinct left/right slots with unique transforms to match the mannequin's stance.
 
+## Phase 9: Manual Cleanup & Resilient AI Infrastructure Completed
+
+### 1. Garment Cleanup Studio
+- **Magic Pen (Eraser)**: Integrated a manual cleanup step using Fabric.js `destination-out` compositing. Users can now erase interior shirts, shadows, or mannequin fragments with real-time feedback.
+- **Precision Controls**: Added adjustable brush sizes, zoom controls, and a robust **Undo/Redo** history system for high-fidelity manual masking.
+- **Non-Destructive Workflow**: Uses local Blob URLs for instant transitions, only uploading the final perfectly cleaned asset to the cloud.
+
+### 2. Dual-Layer Resilient AI
+- **Hugging Face Integration**: Leveraged the `briaai/RMBG-1.4` Inference API for pro-grade, fashion-optimized background removal.
+- **Fail-Safe Local Engine**: Implemented a 100% local fallback using `segformer_b2_clothes` via `Transformers.js`. Optimized to skip unnecessary tokenizer files, resolving previous 404 stalls.
+- **Unblockable Flow**: Added a "Skip AI" option allowing users to proceed directly to manual cleanup if AI services are slow or unreachable.
+
+### 3. Standardized Layering System
+- **Pixel-Perfect Centering**: Unified the centering logic for all persona layers (Mannequin + Garments) using `left: 50%, top: 50%` with absolute CSS translates. This eliminates misalignment and "shifted" garment issues.
+- **Category-Based Z-Indices**: Transitioned to a robust integer-based system (Bottoms: 100+, Shoes: 200+, Tops: 300+, Jackets: 400+) to ensure consistent depth across all browsers.
+- **Modular Depth Control**: Hardcoded modular jacket render orders to ensure sleeves are correctly layered in front of the torso for an authentic "open jacket" appearance.
+
+### 4. Advanced Session & Network Reliability
+- **Proactive Auth Guard**: Updated the `axios` interceptor to automatically detect `403 Forbidden` errors, instantly logging out and redirecting users to refresh their sessions.
+- **Upload Optimization**: Integrated `browser-image-compression` to automatically downscale large uploads (1500px max) before AI processing, reducing memory usage and speeding up the pipeline.
+
 ---
 
 ## Technical Highlights

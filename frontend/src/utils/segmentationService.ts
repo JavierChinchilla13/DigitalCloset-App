@@ -6,23 +6,62 @@ env.useBrowserCache = true;
 
 class SegmentationService {
   private segmenter: ImageSegmentationPipeline | null = null;
-  private modelName = 'Xenova/segformer_b2_clothes';
+  private segmenterModel = 'Xenova/segformer_b2_clothes';
 
-  async init() {
+  async initSegmenter() {
     if (this.segmenter) return;
-    
     try {
-      this.segmenter = await pipeline('image-segmentation', this.modelName, {
+      console.log('Initializing Modular Engine...');
+      // @ts-expect-error - image_processor_only avoids tokenizer 404s
+      this.segmenter = await pipeline('image-segmentation', this.segmenterModel, { 
         device: 'webgpu',
+        image_processor_only: true 
       }) as ImageSegmentationPipeline;
     } catch (err) {
-      console.warn("WebGPU not available, falling back to WASM/CPU", err);
-      this.segmenter = await pipeline('image-segmentation', this.modelName) as ImageSegmentationPipeline;
+      console.warn("WebGPU not available for segmenter, falling back to WASM/CPU");
+      // @ts-expect-error
+      this.segmenter = await pipeline('image-segmentation', this.segmenterModel, {
+        image_processor_only: true
+      }) as ImageSegmentationPipeline;
     }
   }
 
+  /**
+   * Resilient background removal using the proven Clothing Segmenter.
+   * Note: This is used as a local fallback for the main background removal service.
+   */
+  async removeBackground(imageSource: string | File): Promise<Blob> {
+    await this.initSegmenter();
+    if (!this.segmenter) throw new Error("AI Engine not initialized");
+
+    const source = imageSource instanceof File ? await this.fileToDataURL(imageSource) : imageSource;
+    const output = await this.segmenter(source);
+    
+    const clothingLabels = [
+      'Upper-clothes', 'Coat', 'Dress', 'Left-arm', 'Right-arm', 
+      'Pants', 'Skirt', 'Jumpsuits', 'Socks', 'Gloves', 'Scarf', 'Necklace'
+    ];
+
+    const garmentSegments = output.filter(s => clothingLabels.includes(s.label));
+    const originalImg = await this.loadImage(source);
+    
+    if (garmentSegments.length > 0) {
+      return this.createBlobFromSegments(garmentSegments, originalImg);
+    } else {
+      const canvas = document.createElement('canvas');
+      canvas.width = originalImg.width;
+      canvas.height = originalImg.height;
+      canvas.getContext('2d')!.drawImage(originalImg, 0, 0);
+      return new Promise<Blob>((resolve) => canvas.toBlob(b => resolve(b!), 'image/png'));
+    }
+  }
+
+  /**
+   * Modular Jacket Segmentation (Torso + Sleeves).
+   * REFACTORED: Now uses a 'Non-Destructive' approach that preserves manual cleanup.
+   */
   async segmentJacket(imageSource: string | HTMLImageElement | File): Promise<Map<string, Blob>> {
-    await this.init();
+    await this.initSegmenter();
     if (!this.segmenter) throw new Error("Segmenter not initialized");
 
     let source: string;
@@ -34,88 +73,131 @@ class SegmentationService {
       source = imageSource;
     }
 
-    const output = await this.segmenter(source);
-    return this.processOutput(output, source);
+    try {
+      const output = await this.segmenter(source);
+      return this.processOutputNonDestructive(output, source);
+    } catch (err) {
+      console.error("AI Segmentation failed:", err);
+      return new Map();
+    }
   }
 
-  private async processOutput(output: ImageSegmentationOutput, originalSource: string | HTMLImageElement): Promise<Map<string, Blob>> {
+  /**
+   * NON-DESTRUCTIVE PROCESSING
+   * 1. Detect Sleeves using AI.
+   * 2. Extract Sleeves using AI masks.
+   * 3. Calculate Torso as (Original Image - Sleeve Masks).
+   * This ensures that any pixels the user manually cleaned/kept are preserved in the Torso.
+   */
+  private async processOutputNonDestructive(output: ImageSegmentationOutput, originalSource: string): Promise<Map<string, Blob>> {
     const labelMap: Record<string, string> = {
-      'Upper-clothes': 'torso',
-      'Coat': 'torso',
-      'Jumpsuits': 'torso',
-      'Dress': 'torso', 
       'Left-arm': 'leftSleeve',
       'Right-arm': 'rightSleeve',
-      'Necklace': 'collar', 
-      'Scarf': 'collar',
       'Gloves': 'leftSleeve',
     };
 
-    console.log('AI Segmentation Output:', output.map(s => s.label));
-
     const originalImg = await this.loadImage(originalSource);
     const results = new Map<string, Blob>();
+    const w = originalImg.width;
+    const h = originalImg.height;
 
-    // 1. Check if we have AI-detected sleeves
-    const hasSleeves = output.some(s => labelMap[s.label]?.includes('Sleeve'));
+    // 1. Identify Sleeve Segments
+    const leftSleeveSegments = output.filter(s => labelMap[s.label] === 'leftSleeve');
+    const rightSleeveSegments = output.filter(s => labelMap[s.label] === 'rightSleeve');
 
-    if (hasSleeves) {
-      // Group segments by canonical label
-      const groupedSegments = new Map<string, any[]>();
-      for (const segment of output) {
-        const canonicalLabel = labelMap[segment.label];
-        if (canonicalLabel) {
-          if (!groupedSegments.has(canonicalLabel)) groupedSegments.set(canonicalLabel, []);
-          groupedSegments.get(canonicalLabel)!.push(segment);
-        }
-      }
+    const hasAISleeves = leftSleeveSegments.length > 0 || rightSleeveSegments.length > 0;
 
-      for (const [label, segments] of groupedSegments.entries()) {
-        const blob = await this.createBlobFromSegments(segments, originalImg);
-        results.set(label, blob);
-      }
-    } else {
-      // 2. Fallback: Geometric Smart Split
-      // If AI only found one big garment, we split it into 3 parts based on width
-      console.warn('AI did not detect independent sleeves. Using Geometric Smart Split fallback.');
+    if (hasAISleeves) {
+      console.log('AI detected sleeves. Performing non-destructive extraction...');
       
-      const garmentSegments = output.filter(s => labelMap[s.label] === 'torso');
-      if (garmentSegments.length > 0) {
-        const fullGarmentBlob = await this.createBlobFromSegments(garmentSegments, originalImg);
-        const fullGarmentImg = await this.loadImage(URL.createObjectURL(fullGarmentBlob));
-        
-        const w = fullGarmentImg.width;
-        const h = fullGarmentImg.height;
+      // Create Sleeve Blobs
+      if (leftSleeveSegments.length > 0) {
+        const leftBlob = await this.createBlobFromSegments(leftSleeveSegments, originalImg);
+        results.set('leftSleeve', leftBlob);
+      }
+      if (rightSleeveSegments.length > 0) {
+        const rightBlob = await this.createBlobFromSegments(rightSleeveSegments, originalImg);
+        results.set('rightSleeve', rightBlob);
+      }
 
-        // Split definitions (Left 28%, Center 44%, Right 28%)
-        const splits = [
-          { name: 'leftSleeve', x: 0, width: w * 0.28 },
-          { name: 'torso', x: w * 0.28, width: w * 0.44 },
-          { name: 'rightSleeve', x: w * 0.72, width: w * 0.28 }
-        ];
+      // 2. CREATE NON-DESTRUCTIVE TORSO
+      // Torso = Original - (Left Mask + Right Mask)
+      const torsoCanvas = document.createElement('canvas');
+      torsoCanvas.width = w;
+      torsoCanvas.height = h;
+      const tCtx = torsoCanvas.getContext('2d')!;
+      
+      // Draw the full cleaned image
+      tCtx.drawImage(originalImg, 0, 0);
+      
+      // Subtract sleeve areas
+      tCtx.globalCompositeOperation = 'destination-out';
+      [...leftSleeveSegments, ...rightSleeveSegments].forEach(segment => {
+        const maskCanvas = this.segmentToMaskCanvas(segment, w, h);
+        tCtx.drawImage(maskCanvas, 0, 0);
+      });
 
-        const canvas = document.createElement('canvas');
-        canvas.width = w;
-        canvas.height = h;
-        const ctx = canvas.getContext('2d')!;
+      const torsoBlob = await new Promise<Blob>((resolve) => torsoCanvas.toBlob(b => resolve(b!), 'image/png'));
+      results.set('torso', torsoBlob);
+      
+    } else {
+      // 3. Fallback: Geometric Smart Split (still non-destructive)
+      console.warn('AI did not detect sleeves. Using Geometric Non-Destructive Split.');
+      
+      const splits = [
+        { name: 'leftSleeve', x: 0, width: w * 0.28 },
+        { name: 'torso', x: w * 0.28, width: w * 0.44 },
+        { name: 'rightSleeve', x: w * 0.72, width: w * 0.28 }
+      ];
 
-        for (const split of splits) {
-          ctx.clearRect(0, 0, w, h);
-          ctx.drawImage(fullGarmentImg, 0, 0);
-          
-          // Clip to the split region
-          ctx.globalCompositeOperation = 'destination-in';
-          ctx.fillStyle = 'white';
-          ctx.fillRect(split.x, 0, split.width, h);
-          ctx.globalCompositeOperation = 'source-over';
+      const canvas = document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d')!;
 
-          const blob = await new Promise<Blob>((resolve) => canvas.toBlob(b => resolve(b!), 'image/png'));
-          results.set(split.name, blob);
-        }
+      for (const split of splits) {
+        ctx.clearRect(0, 0, w, h);
+        ctx.drawImage(originalImg, 0, 0);
+        ctx.globalCompositeOperation = 'destination-in';
+        ctx.fillStyle = 'white';
+        ctx.fillRect(split.x, 0, split.width, h);
+        ctx.globalCompositeOperation = 'source-over';
+
+        const blob = await new Promise<Blob>((resolve) => canvas.toBlob(b => resolve(b!), 'image/png'));
+        results.set(split.name, blob);
       }
     }
 
     return results;
+  }
+
+  /**
+   * Helper to convert a single segment mask to a canvas
+   */
+  private segmentToMaskCanvas(segment: any, targetWidth: number, targetHeight: number): HTMLCanvasElement {
+    const canvas = document.createElement('canvas');
+    canvas.width = segment.mask.width;
+    canvas.height = segment.mask.height;
+    const ctx = canvas.getContext('2d')!;
+    
+    const maskData = segment.mask.data;
+    const rgbaData = new Uint8ClampedArray(maskData.length * 4);
+    for (let i = 0; i < maskData.length; ++i) {
+      rgbaData[i * 4] = 0; rgbaData[i * 4 + 1] = 0; rgbaData[i * 4 + 2] = 0;
+      rgbaData[i * 4 + 3] = maskData[i] > 0 ? 255 : 0;
+    }
+    const imageData = new ImageData(rgbaData, segment.mask.width, segment.mask.height);
+    ctx.putImageData(imageData, 0, 0);
+
+    // Resize to target dimensions if needed
+    if (canvas.width !== targetWidth || canvas.height !== targetHeight) {
+      const resized = document.createElement('canvas');
+      resized.width = targetWidth;
+      resized.height = targetHeight;
+      resized.getContext('2d')!.drawImage(canvas, 0, 0, targetWidth, targetHeight);
+      return resized;
+    }
+    return canvas;
   }
 
   private async createBlobFromSegments(segments: any[], originalImg: HTMLImageElement): Promise<Blob> {
@@ -126,24 +208,8 @@ class SegmentationService {
     ctx.imageSmoothingEnabled = false;
 
     for (const segment of segments) {
-      const maskCanvas = document.createElement('canvas');
-      maskCanvas.width = segment.mask.width;
-      maskCanvas.height = segment.mask.height;
-      const maskCtx = maskCanvas.getContext('2d')!;
-      
-      const maskData = segment.mask.data;
-      const rgbaData = new Uint8ClampedArray(maskData.length * 4);
-      
-      for (let i = 0; i < maskData.length; ++i) {
-        rgbaData[i * 4] = 0;
-        rgbaData[i * 4 + 1] = 0;
-        rgbaData[i * 4 + 2] = 0;
-        rgbaData[i * 4 + 3] = maskData[i] > 0 ? 255 : 0;
-      }
-
-      const imageData = new ImageData(rgbaData, segment.mask.width, segment.mask.height);
-      maskCtx.putImageData(imageData, 0, 0);
-      ctx.drawImage(maskCanvas, 0, 0, canvas.width, canvas.height);
+      const maskCanvas = this.segmentToMaskCanvas(segment, canvas.width, canvas.height);
+      ctx.drawImage(maskCanvas, 0, 0);
     }
 
     ctx.globalCompositeOperation = 'source-in';

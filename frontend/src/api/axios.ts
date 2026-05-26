@@ -22,11 +22,11 @@ api.interceptors.request.use(
   }
 );
 
-// Response interceptor for handling token expiration
+// Response interceptor for handling token expiration and permission errors
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    if (error.response?.status === 401 || error.response?.status === 403) {
       useAuthStore.getState().logout();
       window.location.href = '/login';
     }
